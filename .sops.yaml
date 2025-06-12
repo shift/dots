@@ -1,0 +1,46 @@
+keys:
+  - &admin_shift age1uldzfkmjda3j26yqs2uf7e6vkgschmem0euquv654l0cjzrmde8qpx9uc3
+  - &fido2_key_1 age1r26939anq7ykj4cucl4up62t5c2hgczphyv2cq80c368r65e0dwsajfj57
+  - &x1y age1ze0j4n45fray8q4aqma2d07vtcjfyevehqvqjxceha29nc4epsgqtvmwlf
+  - &shulkerbox: age1msz6hq60tfg3t5ydvwpc55vkfgttp6hce7u62sy3dnc83tar0qksa7fj36
+#  - &x1y_tpm age1tpm1qwpfuxu2k66gw94kqgfu8kchk9hcd754hq6wuwqtd8p3w7yl3d6qwmvvlml
+creation_rules:
+  - path_regex: secrets/common.yaml$
+    key_groups:
+    - age:
+      - *admin_shift
+      - *fido2_key_1
+      - *x1y
+      - *shulkerbox
+
+  - path_regex: secrets/x1y/secrets.yaml$
+    key_groups:
+    - age:
+      - *admin_shift
+      - *fido2_key_1
+      - *x1y
+
+  - path_regex: secrets/secureboot/x1y/.*
+    key_groups:
+    - age:
+      - *admin_shift
+      - *fido2_key_1
+      - *x1y
+      - *shulkerbox
+
+  - path_regex: secrets/secureboot/shulkerbox/.*
+    key_groups:
+    - age:
+      - *admin_shift
+      - *fido2_key_1
+      - *shulkerbox
+
+  - path_regex: secrets/shulkerbox/secrets.yaml$
+    key_groups:
+    - age:
+      - *admin_shift
+      - *fido2_key_1
+      - *shulkerbox
+
+
+
