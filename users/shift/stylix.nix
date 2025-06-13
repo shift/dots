@@ -1,5 +1,4 @@
-_:
-{
+_: {
   stylix = {
     enable = true;
     autoEnable = true;

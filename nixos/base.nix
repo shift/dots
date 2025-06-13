@@ -1,5 +1,4 @@
-_:
-{
+_: {
   system.nixos.distroId = "dots";
   # Stops systemd from blocking booting if a service hangs while activating.
   systemd.extraConfig = ''

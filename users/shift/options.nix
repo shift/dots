@@ -1,5 +1,4 @@
-_:
-{
+_: {
   shift.sway.enable = true;
   shift.waybar.enable = true;
 }
