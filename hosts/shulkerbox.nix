@@ -50,9 +50,9 @@
       "rd.udev.log_level=3"
       "rd.luks.options=tpm2-measure-pcr=yes"
       "udev.log_priority=3"
-      #"resume_offset=533760"
+      "resume_offset=533760"
     ];
-    #resumeDevice = "/dev/mapper/crypted";
+    resumeDevice = "/dev/mapper/crypted";
 
     initrd.availableKernelModules = [
       "xhci_pci"
@@ -223,6 +223,7 @@
       };
     };
     libinput.enable = true;
+    xserver.desktopManager.cinnamon.enable = true;
 
     # Enable CUPS to print documents.
     printing.enable = true;
