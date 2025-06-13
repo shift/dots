@@ -527,26 +527,6 @@
         "type": "github"
       }
     },
-    "nix-github-actions": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1737420293,
-        "narHash": "sha256-F1G5ifvqTpJq7fdkT34e/Jy9VCyzd5XfJ9TO8fHhJWE=",
-        "owner": "nix-community",
-        "repo": "nix-github-actions",
-        "rev": "f4158fa080ef4503c8f4c820967d946c2af31ec9",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "nix-github-actions",
-        "type": "github"
-      }
-    },
     "nix-minecraft": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -556,11 +536,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1749693896,
-        "narHash": "sha256-uQETCN7a1oB4moN78r9mnVp2nSu4D0pRBidpwLTaJK0=",
+        "lastModified": 1749780394,
+        "narHash": "sha256-KZypZIU6L2EJRej+nBm5IuW6Q8nfccvylXWMkfhHTCA=",
         "owner": "Infinidoge",
         "repo": "nix-minecraft",
-        "rev": "4ce3cdd54fb3dab07225b9cc49a429acc0d20338",
+        "rev": "4f330afee93356ceedf61c772f9a296388db76aa",
         "type": "github"
       },
       "original": {
@@ -701,11 +681,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1749724292,
-        "narHash": "sha256-hfg2bASDqSfxxovnlr9z4AgGMD5SEdUdi5fX24HlCww=",
+        "lastModified": 1749806635,
+        "narHash": "sha256-Ag8Fyl7C9GWSz8C5ZHmpB1VuWm5ubPfVYypryNJ4EdY=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "2689d7f2a992040a5f14eb3ac6320f9842298fa9",
+        "rev": "4a56f1f9e241efe024d3ffbb024f3108272fe6b2",
         "type": "github"
       },
       "original": {
@@ -868,7 +848,6 @@
         "home-manager": "home-manager",
         "impermanence": "impermanence",
         "lanzaboote": "lanzaboote",
-        "nix-github-actions": "nix-github-actions",
         "nix-minecraft": "nix-minecraft",
         "nixd": "nixd",
         "nixos-generators": "nixos-generators",
@@ -946,11 +925,11 @@
         "tinted-zed": "tinted-zed"
       },
       "locked": {
-        "lastModified": 1749671679,
-        "narHash": "sha256-ijvjSTuWBZOTCUqE5UdmYKN8Hb/hCwFbbvafjoe4o4g=",
+        "lastModified": 1749768934,
+        "narHash": "sha256-xtWRTlYBs+wYE8NaV+mwdlVYWX0k2BkCuFdjexjEebY=",
         "owner": "nix-community",
         "repo": "stylix",
-        "rev": "d4f5e55c3f9f985eff40d41e542702cfc8801726",
+        "rev": "e1cfc2b69432ac2abe95db133dcbdfc96cd3bedb",
         "type": "github"
       },
       "original": {
