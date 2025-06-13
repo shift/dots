@@ -19,4 +19,11 @@ _:
 
   programs.dconf.enable = true;
   programs.light.enable = true;
+
+  users.groups = {
+     children = {
+       name = "children";
+     };
+   };
+
 }
