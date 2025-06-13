@@ -4,7 +4,7 @@
     remotes = [
       {
         name = "origin";
-        url = "https://gitlab.com/shift/dots.git";
+        url = "https://github.com/shift/dots.git";
         branches.main.name = "main";
       }
     ];
