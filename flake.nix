@@ -40,10 +40,6 @@
 
     # Devshell
     treefmt-nix.url = "github:numtide/treefmt-nix";
-
-    nix-github-actions.url = "github:nix-community/nix-github-actions";
-    nix-github-actions.inputs.nixpkgs.follows = "nixpkgs";
-
   };
 
   outputs =
@@ -64,7 +60,6 @@
     let
       system = "x86_64-linux";
       pkgs-unstable = nixpkgs-unstable.legacyPackages.x86_64-linux;
-
     in
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
@@ -79,9 +74,6 @@
       ];
 
       flake = {
-        githubActions = nix-github-actions.lib.mkGithubMatrix {
-          checks = nixpkgs.lib.getAttrs [ "x86_64-linux" ] self.checks;
-        };
 
         # Configurations for Linux (NixOS) systems
         nixosConfigurations = {

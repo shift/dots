@@ -1,5 +1,4 @@
-_:
-{
+_: {
   environment.persistence."/persist" = {
     enable = true;
     hideMounts = true;
