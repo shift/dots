@@ -51,7 +51,6 @@
       lanzaboote,
       impermanence,
       home-manager,
-      nix-github-actions,
       nixvim,
       nixos-generators,
       disko,
