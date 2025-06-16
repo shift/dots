@@ -20,9 +20,9 @@ _: {
   programs.light.enable = true;
 
   users.groups = {
-     children = {
-       name = "children";
-     };
-   };
+    children = {
+      name = "children";
+    };
+  };
 
 }
