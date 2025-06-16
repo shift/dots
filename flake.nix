@@ -76,15 +76,6 @@
 
         # Configurations for Linux (NixOS) systems
         nixosConfigurations = {
-          inherit
-            inputs
-            nixpkgs
-            nixpkgs-unstable
-            nixos-hardware
-            home-manager
-            nixvim
-            ; # Inherit inputs
-
           shulkerbox = nixpkgs.lib.nixosSystem {
             specialArgs = {
               inherit inputs;
