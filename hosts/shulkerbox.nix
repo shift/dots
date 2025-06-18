@@ -196,6 +196,7 @@
     '';
     tumbler.enable = true;
     acpid.enable = true;
+    flatpak.enable = true;
     dbus = {
       enable = true;
       implementation = "broker";
