@@ -26,6 +26,13 @@
     };
 
     # Software inputs
+    dots-notifier = {
+      url = "github:shift/dots-notifier";
+    };
+    geoclue-prometheus-exporter = {
+      url = "github:shift/geoclue-prometheus-exporter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixvim.url = "github:nix-community/nixvim/nixos-25.05";
     nixd.url = "github:nix-community/nixd";
     nix-minecraft = {
@@ -89,24 +96,25 @@
               # The following is used for partitioning of drives during the installation.
               inputs.disko.nixosModules.disko
               impermanence.nixosModules.impermanence
-              #lanzaboote.nixosModules.lanzaboote
               inputs.sops-nix.nixosModules.sops
               inputs.comin.nixosModules.comin
               home-manager.nixosModules.home-manager
               nixvim.nixosModules.nixvim
               inputs.stylix.nixosModules.stylix
+              inputs.geoclue-prometheus-exporter.nixosModules.default
+              inputs.dots-notifier.nixosModules.x86_64-linux.notifier
               {
                 nixpkgs.config.allowUnfree = true;
                 stylix.enable = true;
                 stylix.autoEnable = true;
-                stylix.image = ./assets/wallpaper.jpg;
-                stylix.targets.plymouth.logo = ./assets/wallpaper.jpg;
+                #stylix.image = ./assets/wallpaper.jpg;
+                #stylix.targets.plymouth.logo = ./assets/wallpaper.jpg;
                 stylix.targets.plymouth.logoAnimated = false;
                 stylix.polarity = "dark";
 
                 stylix.opacity = {
-                  terminal = 0.95;
-                  popups = 0.95;
+                  terminal = 0.5;
+                  popups = 0.5;
                   desktop = 0.5;
                 };
                 stylix.targets.grub.useImage = true;
@@ -114,6 +122,16 @@
 
                 #services.btrfs.autoScrub.enable = true;
                 services.qemuGuest.enable = true;
+              }
+              ./modules
+              ./modules/wallpaper.nix
+              {
+                dots.wallpaper = {
+                  enable = true;
+                  width = 2560; # Configure for your screen
+                  height = 1440; # Configure for your screen
+                  flakeRootDefault = ./assets/wallpaper.jpg;
+                };
               }
               ./disks/shulkerbox/disko.nix
               ./hosts/shulkerbox.nix

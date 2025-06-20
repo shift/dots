@@ -469,6 +469,25 @@
   documentation.info.enable = true;
   documentation.doc.enable = true;
 
+  services.grafana-alloy-laptop = {
+    enable = true;
+    grafanaCloud = {
+      url = "https://prometheus-prod-01-eu-west-0.grafana.net/api/prom/push";
+      username = "12345";
+      password = "your-api-key-here";
+    };
+    textfileCollector.enable = true;
+  };
+  # If the geoclue module is enabled, it will auto-register with alloy
+  services.geoclue-prometheus-exporter = {
+    enable = true;
+    bind = "127.0.0.1";
+    port = 9090;
+
+    # Optional: you can disable the auto-registration
+    # registerWithAlloy = false;
+  };
+
   system.stateVersion = "25.05";
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }
