@@ -5,6 +5,10 @@
   pkgs-unstable,
   ...
 }:
+let
+  hostUtils = import ../lib.nix { inherit lib pkgs; };
+  factorConfig = hostUtils.mkHostConfig ./.;
+in
 {
   imports = [
     ../../nixos/nix.nix
@@ -14,7 +18,7 @@
     ../../nixos/persistence.nix
     ../../nixos/base.nix
     ../../nixos/i18n.nix
-  ];
+  ] ++ [ factorConfig ];
 
   sops.defaultSopsFile = ../../secrets/common.yaml;
   sops.defaultSopsFormat = "yaml";
@@ -36,7 +40,7 @@
     sopsFile = ../../secrets/shulkerbox/secrets.yaml;
   };
 
-  zramSwap.enable = true;
+  # zramSwap configuration moved to factor.json
 
   boot = {
     kernelPackages = pkgs.linuxPackages_latest;
@@ -87,68 +91,16 @@
     size = lib.mkForce 26;
   };
 
-  services.tlp.enable = true;
-  services.power-profiles-daemon.enable = lib.mkForce false;
-  services.fprintd.enable = true;
+  # TLP and power management moved to factor.json
 
-  hardware = {
-    sane.enable = true;
-    sane.extraBackends = [
-      pkgs.hplipWithPlugin
-      pkgs.sane-airscan
-    ];
-    enableAllFirmware = true;
-    bluetooth = {
-      enable = true;
-      powerOnBoot = true;
-      settings = {
-        General = {
-          Enable = "Source,Sink,Media,Socket";
-          ControllerMode = "dual";
-          FastConnectable = "true";
-          Experimental = "true";
-        };
-        Policy = {
-          AutoEnable = "true";
-        };
-      };
-    };
-  };
+  # Hardware configuration moved to factor.json
 
-  networking = {
-    hostName = "shulkerbox";
-    wireless.dbusControlled = true;
-    networkmanager = {
-      enable = true;
-    };
-  };
+  # Networking configuration moved to factor.json
+  networking.hostName = "shulkerbox";  # Host-specific, keep here
 
-  nix = {
-    optimise = {
-      automatic = true;
-      dates = [ "03:45" ];
-    };
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 30d";
-    };
-    settings = {
-      max-jobs = lib.mkForce 1;
-      system-features = [
-        "benchmark"
-        "big-parallel"
-        "kvm"
-        "nixos-test"
-      ];
-    };
-  };
+  # Nix configuration moved to factor.json
 
-  powerManagement = {
-    enable = true;
-    cpuFreqGovernor = "schedutil";
-    powertop.enable = true;
-  };
+  # Power management configuration moved to factor.json
 
   xdg.portal = {
     enable = true;
@@ -436,18 +388,7 @@
   services.openssh.enable = true;
   services.openssh.settings.DenyGroups = [ "children" ];
 
-  nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-  };
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      intel-compute-runtime
-      intel-media-driver
-      vaapiVdpau
-      libvdpau-va-gl
-    ];
-  };
+  # Graphics configuration moved to factor.json
 
   home-manager.backupFileExtension = "backup";
   home-manager.useGlobalPkgs = true;
@@ -479,6 +420,5 @@
     # registerWithAlloy = false;
   };
 
-  system.stateVersion = "25.05";
-  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  # State version and host platform managed by factor.json
 }
