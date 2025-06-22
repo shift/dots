@@ -134,7 +134,7 @@
                 };
               }
               ./disks/shulkerbox/disko.nix
-              ./hosts/shulkerbox.nix
+              ./hosts/shulkerbox
               ./nixos/secureboot.nix
               ./nixos/comin.nix
               ./nixos/ssh-tpm-agent.nix
@@ -252,7 +252,7 @@
 
               }
 
-              #./hosts/shulkerbox.nix
+              #./hosts/shulkerbox
             ];
           };
         };

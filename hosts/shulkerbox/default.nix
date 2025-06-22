@@ -7,16 +7,16 @@
 }:
 {
   imports = [
-    ../nixos/nix.nix
-    ../nixos/sshd.nix
-    ../nixos/current-location.nix
-    ../nixos/fontconfig.nix
-    ../nixos/persistence.nix
-    ../nixos/base.nix
-    ../nixos/i18n.nix
+    ../../nixos/nix.nix
+    ../../nixos/sshd.nix
+    ../../nixos/current-location.nix
+    ../../nixos/fontconfig.nix
+    ../../nixos/persistence.nix
+    ../../nixos/base.nix
+    ../../nixos/i18n.nix
   ];
 
-  sops.defaultSopsFile = ../secrets/common.yaml;
+  sops.defaultSopsFile = ../../secrets/common.yaml;
   sops.defaultSopsFormat = "yaml";
   sops.secrets."shift_hashed_passwd" = {
     neededForUsers = true;
@@ -29,11 +29,11 @@
   };
   sops.secrets."dio_hashed_passwd" = {
     neededForUsers = true;
-    sopsFile = ./../secrets/shulkerbox/secrets.yaml;
+    sopsFile = ./../../secrets/shulkerbox/secrets.yaml;
   };
   sops.secrets."squeals_hashed_passwd" = {
     neededForUsers = true;
-    sopsFile = ./../secrets/shulkerbox/secrets.yaml;
+    sopsFile = ./../../secrets/shulkerbox/secrets.yaml;
   };
 
   zramSwap.enable = true;
@@ -462,9 +462,9 @@
   home-manager.backupFileExtension = "backup";
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.users.shift = ./../users/shift/home.nix;
-  home-manager.users.dio = ./../users/dio/home.nix;
-  home-manager.users.squeals = ./../users/squeals/home.nix;
+  home-manager.users.shift = ./../../users/shift/home.nix;
+  home-manager.users.dio = ./../../users/dio/home.nix;
+  home-manager.users.squeals = ./../../users/squeals/home.nix;
 
   documentation.nixos.enable = true;
   documentation.info.enable = true;
