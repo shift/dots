@@ -261,15 +261,10 @@
     # "python-2.7.18.8"
   ];
 
-  # Set your time zone.
-  time.timeZone = "Europe/Berlin";
-
   console = {
     keyMap = lib.mkForce "us";
     useXkbConfig = true; # use xkb.options in tty.
   };
-
-  location.provider = "geoclue2";
 
   programs.regreet = {
     enable = true;
