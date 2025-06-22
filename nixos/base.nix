@@ -1,4 +1,8 @@
-_: {
+{
+  pkgs,
+  ...
+}:
+{
   system.nixos.distroId = "dots";
   # Stops systemd from blocking booting if a service hangs while activating.
   systemd.extraConfig = ''
@@ -24,5 +28,15 @@ _: {
       name = "children";
     };
   };
-
+  environment.systemPackages = with pkgs; [
+    gnome-software
+    gnome-calculator
+    gnome-calendar
+    gnome-screenshot
+    flatpak
+    xdg-desktop-portal
+    xdg-desktop-portal-gtk
+    xdg-desktop-portal-gnome
+    system-config-printer
+  ];
 }

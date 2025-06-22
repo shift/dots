@@ -12,7 +12,6 @@
 
   programs.firefox.enable = true;
 
-
   home.packages = with pkgs; [
     # Common packages
     reaper
