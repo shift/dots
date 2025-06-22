@@ -5,6 +5,7 @@
   ];
   stylix = {
     enable = true;
+    autoEnable = true;
     image = ../../assets/dio/wallpaper.png;
   };
   home.stateVersion = "25.05"; # Don't change this. This will not upgrade your home-manager.
