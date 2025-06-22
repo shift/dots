@@ -8,9 +8,6 @@ let
   
   # Filter to only include directories (not files like this default.nix)
   onlyDirs = lib.filterAttrs (name: type: type == "directory") hostDirs;
-  
-  # Create import paths for each host directory
-  hostImports = lib.mapAttrsToList (name: _: ./${name}) onlyDirs;
 in
 {
   # Export the hosts for use by flake.nix

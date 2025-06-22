@@ -29,11 +29,11 @@
   };
   sops.secrets."dio_hashed_passwd" = {
     neededForUsers = true;
-    sopsFile = ./../../secrets/shulkerbox/secrets.yaml;
+    sopsFile = ../../secrets/shulkerbox/secrets.yaml;
   };
   sops.secrets."squeals_hashed_passwd" = {
     neededForUsers = true;
-    sopsFile = ./../../secrets/shulkerbox/secrets.yaml;
+    sopsFile = ../../secrets/shulkerbox/secrets.yaml;
   };
 
   zramSwap.enable = true;
@@ -256,7 +256,6 @@
   environment.sessionVariables.WLR_RENDERER = "vulkan";
   environment.sessionVariables.ELECTRON_OZONE_PLATFORM_HINT = "wayland";
 
-  nixpkgs.config.allowUnfree = false;
   nixpkgs.config.permittedInsecurePackages = [
     # "electron-25.9.0"
     # "python-2.7.18.8"
@@ -274,10 +273,6 @@
 
   programs.regreet = {
     enable = true;
-
-    settings = {
-    };
-
   };
   # Lets have tmux.
   programs.tmux.enable = true;
@@ -462,9 +457,9 @@
   home-manager.backupFileExtension = "backup";
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.users.shift = ./../../users/shift/home.nix;
-  home-manager.users.dio = ./../../users/dio/home.nix;
-  home-manager.users.squeals = ./../../users/squeals/home.nix;
+  home-manager.users.shift = ../../users/shift/home.nix;
+  home-manager.users.dio = ../../users/dio/home.nix;
+  home-manager.users.squeals = ../../users/squeals/home.nix;
 
   documentation.nixos.enable = true;
   documentation.info.enable = true;
