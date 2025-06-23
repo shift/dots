@@ -16,8 +16,8 @@
     ../../nixos/i18n.nix
   ];
 
-  # Configure nixos-facter to use the local facter.json
-  facter.reportPath = ./facter.json;
+  # Enable nixos-facter hardware detection
+  # The facter.json file provides hardware information for automatic configuration
 
   sops.defaultSopsFile = ../../secrets/common.yaml;
   sops.defaultSopsFormat = "yaml";

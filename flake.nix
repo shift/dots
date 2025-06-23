@@ -107,7 +107,7 @@
               inputs.stylix.nixosModules.stylix
               inputs.geoclue-prometheus-exporter.nixosModules.default
               inputs.dots-notifier.nixosModules.x86_64-linux.notifier
-              inputs.nixos-facter.nixosModules.facter
+              inputs.nixos-facter.nixosModules.default
               {
                 nixpkgs.config.allowUnfree = true;
                 stylix.enable = true;
