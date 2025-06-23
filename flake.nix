@@ -45,6 +45,9 @@
     stylix.inputs.nixpkgs.follows = "nixpkgs";
     stylix.inputs.home-manager.follows = "home-manager";
 
+    # Hardware detection
+    nixos-facter.url = "github:nix-community/nixos-facter";
+
     # Devshell
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
@@ -61,6 +64,7 @@
       nixvim,
       nixos-generators,
       disko,
+      nixos-facter,
       ...
     }:
     let
@@ -103,6 +107,7 @@
               inputs.stylix.nixosModules.stylix
               inputs.geoclue-prometheus-exporter.nixosModules.default
               inputs.dots-notifier.nixosModules.x86_64-linux.notifier
+              inputs.nixos-facter.nixosModules.default
               {
                 nixpkgs.config.allowUnfree = true;
                 stylix.enable = true;
@@ -134,7 +139,7 @@
                 };
               }
               ./disks/shulkerbox/disko.nix
-              ./hosts/shulkerbox.nix
+              ./hosts/shulkerbox
               ./nixos/secureboot.nix
               ./nixos/comin.nix
               ./nixos/ssh-tpm-agent.nix
@@ -252,7 +257,7 @@
 
               }
 
-              #./hosts/shulkerbox.nix
+              #./hosts/shulkerbox
             ];
           };
         };

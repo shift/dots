@@ -7,16 +7,19 @@
 }:
 {
   imports = [
-    ../nixos/nix.nix
-    ../nixos/sshd.nix
-    ../nixos/current-location.nix
-    ../nixos/fontconfig.nix
-    ../nixos/persistence.nix
-    ../nixos/base.nix
-    ../nixos/i18n.nix
+    ../../nixos/nix.nix
+    ../../nixos/sshd.nix
+    ../../nixos/current-location.nix
+    ../../nixos/fontconfig.nix
+    ../../nixos/persistence.nix
+    ../../nixos/base.nix
+    ../../nixos/i18n.nix
   ];
 
-  sops.defaultSopsFile = ../secrets/common.yaml;
+  # Enable nixos-facter hardware detection
+  # The facter.json file provides hardware information for automatic configuration
+
+  sops.defaultSopsFile = ../../secrets/common.yaml;
   sops.defaultSopsFormat = "yaml";
   sops.secrets."shift_hashed_passwd" = {
     neededForUsers = true;
@@ -29,11 +32,11 @@
   };
   sops.secrets."dio_hashed_passwd" = {
     neededForUsers = true;
-    sopsFile = ./../secrets/shulkerbox/secrets.yaml;
+    sopsFile = ../../secrets/shulkerbox/secrets.yaml;
   };
   sops.secrets."squeals_hashed_passwd" = {
     neededForUsers = true;
-    sopsFile = ./../secrets/shulkerbox/secrets.yaml;
+    sopsFile = ../../secrets/shulkerbox/secrets.yaml;
   };
 
   zramSwap.enable = true;
@@ -446,25 +449,26 @@
   services.openssh.enable = true;
   services.openssh.settings.DenyGroups = [ "children" ];
 
-  nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-  };
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      intel-compute-runtime
-      intel-media-driver
-      vaapiVdpau
-      libvdpau-va-gl
-    ];
-  };
+  # Graphics configuration is now handled by nixos-facter
+  # nixpkgs.config.packageOverrides = pkgs: {
+  #   vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+  # };
+  # hardware.graphics = {
+  #   enable = true;
+  #   extraPackages = with pkgs; [
+  #     intel-compute-runtime
+  #     intel-media-driver
+  #     vaapiVdpau
+  #     libvdpau-va-gl
+  #   ];
+  # };
 
   home-manager.backupFileExtension = "backup";
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.users.shift = ./../users/shift/home.nix;
-  home-manager.users.dio = ./../users/dio/home.nix;
-  home-manager.users.squeals = ./../users/squeals/home.nix;
+  home-manager.users.shift = ../../users/shift/home.nix;
+  home-manager.users.dio = ../../users/dio/home.nix;
+  home-manager.users.squeals = ../../users/squeals/home.nix;
 
   documentation.nixos.enable = true;
   documentation.info.enable = true;

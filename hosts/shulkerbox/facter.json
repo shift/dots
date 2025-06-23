@@ -1,0 +1,86 @@
+{
+  "version": "0.0.1",
+  "system": "x86_64-linux",
+  "virtualisation": "none",
+  "hardware": {
+    "cpu": {
+      "vendor": "Intel",
+      "architecture": "x86_64",
+      "cores": 4,
+      "threads": 8,
+      "flags": ["kvm", "vmx"],
+      "governor": "schedutil"
+    },
+    "memory": {
+      "total": "8GB"
+    },
+    "graphics": [
+      {
+        "vendor": "Intel",
+        "model": "Intel Graphics",
+        "driver": "i915",
+        "pci_id": "8086:1616"
+      }
+    ],
+    "network": [
+      {
+        "type": "wifi",
+        "vendor": "Intel",
+        "model": "Wireless",
+        "driver": "iwlwifi"
+      },
+      {
+        "type": "ethernet", 
+        "vendor": "Intel",
+        "model": "Ethernet",
+        "driver": "e1000e"
+      }
+    ],
+    "audio": [
+      {
+        "vendor": "Intel",
+        "model": "HDA Audio",
+        "driver": "snd_hda_intel"
+      }
+    ],
+    "bluetooth": [
+      {
+        "vendor": "Intel",
+        "model": "Bluetooth",
+        "driver": "btusb"
+      }
+    ],
+    "storage": [
+      {
+        "type": "ssd",
+        "vendor": "Generic",
+        "model": "SSD",
+        "size": "256GB",
+        "driver": "ahci"
+      }
+    ],
+    "input": [
+      {
+        "type": "fingerprint",
+        "vendor": "Generic",
+        "model": "Fingerprint Reader",
+        "driver": "libfprint"
+      }
+    ]
+  },
+  "kernel": {
+    "modules": [
+      "xhci_pci",
+      "ehci_pci", 
+      "ahci",
+      "uas",
+      "sd_mod",
+      "rtsx_pci_sdmmc",
+      "kvm-intel"
+    ]
+  },
+  "boot": {
+    "secure_boot": true,
+    "tpm": true
+  }
+}
