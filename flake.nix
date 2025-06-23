@@ -276,6 +276,12 @@
           # };
           #
           # packages.default = self'.packages.activate;
+          
+          # Add wallpaper tests  
+          packages = {
+            wallpaper-tests = import ./tests { inherit pkgs lib; };
+          };
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pkgs.git
