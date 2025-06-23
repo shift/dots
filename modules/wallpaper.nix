@@ -232,6 +232,14 @@ let
 
     # Create wallpaper directory if it doesn't exist
     mkdir -p "$WALLPAPER_DIR"
+    
+    # Verify the output directory is writable
+    if [[ ! -w "$WALLPAPER_DIR" ]]; then
+      echo "ERROR: Output directory is not writable: $WALLPAPER_DIR"
+      echo "Please check permissions and ensure the directory exists."
+      exit 1
+    fi
+    echo "DEBUG: Output directory is writable: $WALLPAPER_DIR"
 
     # Function to find wallpapers in user HOME directories
     collect_user_wallpapers() {
@@ -246,11 +254,32 @@ let
         
         # Look for stylix config in user's home
         if [[ -f "$home_dir/.config/stylix/image" ]]; then
+          echo "DEBUG: Found stylix image file for user $username: $home_dir/.config/stylix/image"
+          
           # This might be a path or a symlink to the actual wallpaper
-          user_wallpaper=$(readlink -f "$home_dir/.config/stylix/image")
-          if [[ -f "$user_wallpaper" ]]; then
-            echo "Found wallpaper for user $username: $user_wallpaper"
-            wallpapers+=("$user_wallpaper")
+          # Handle readlink failures gracefully
+          if user_wallpaper=$(readlink -f "$home_dir/.config/stylix/image" 2>/dev/null); then
+            echo "DEBUG: Resolved wallpaper path: $user_wallpaper"
+            
+            # Verify the resolved file exists
+            if [[ -f "$user_wallpaper" ]]; then
+              # Check if file is not empty
+              if [[ -s "$user_wallpaper" ]]; then
+                # Verify it's a valid image format
+                if mime_type=$(file --mime-type -b "$user_wallpaper" 2>/dev/null) && [[ "$mime_type" =~ ^image/ ]]; then
+                  echo "Found valid wallpaper for user $username: $user_wallpaper (type: $mime_type)"
+                  wallpapers+=("$user_wallpaper")
+                else
+                  echo "WARNING: File is not a valid image for user $username: $user_wallpaper (type: $mime_type). Using default wallpaper."
+                fi
+              else
+                echo "WARNING: Wallpaper file is empty for user $username: $user_wallpaper. Using default wallpaper."
+              fi
+            else
+              echo "WARNING: Resolved wallpaper file does not exist for user $username: $user_wallpaper. Using default wallpaper."
+            fi
+          else
+            echo "WARNING: Failed to resolve wallpaper path for user $username: $home_dir/.config/stylix/image. Using default wallpaper."
           fi
         fi
       done < /etc/passwd
@@ -276,19 +305,76 @@ let
 
     # Collect wallpapers - Fix: Use read to handle paths with spaces
     mapfile -t wallpapers < <(collect_user_wallpapers)
+    
+    # Debug: Print collected wallpapers
+    echo "DEBUG: Collected ${#wallpapers[@]} wallpaper(s):"
+    for i in "${!wallpapers[@]}"; do
+      echo "  [$i]: ${wallpapers[$i]}"
+    done
+    
+    # Validate all collected wallpapers before proceeding
+    valid_wallpapers=()
+    for wallpaper in "${wallpapers[@]}"; do
+      if [[ -f "$wallpaper" && -s "$wallpaper" ]]; then
+        if mime_type=$(file --mime-type -b "$wallpaper" 2>/dev/null) && [[ "$mime_type" =~ ^image/ ]]; then
+          valid_wallpapers+=("$wallpaper")
+          echo "DEBUG: Validated wallpaper: $wallpaper (type: $mime_type)"
+        else
+          echo "WARNING: Skipping invalid image: $wallpaper (type: $mime_type)"
+        fi
+      else
+        echo "WARNING: Skipping non-existent or empty file: $wallpaper"
+      fi
+    done
+    
+    # Use valid wallpapers or fallback to default
+    if [[ "${#valid_wallpapers[@]}" -gt 0 ]]; then
+      wallpapers=("${valid_wallpapers[@]}")
+      echo "Using ${#wallpapers[@]} validated wallpaper(s)"
+    else
+      echo "WARNING: No valid wallpapers found, using default: $DEFAULT_WALLPAPER"
+      wallpapers=("$DEFAULT_WALLPAPER")
+    fi
 
     # Generate the pie chart wallpaper
     echo "Generating combined wallpaper with ${toString cfg.width}x${toString cfg.height} dimensions"
-    ${pieImageCombinerApp}/bin/pie-image-combiner \
+    echo "DEBUG: Executing pie-image-combiner with ${#wallpapers[@]} wallpaper(s)"
+    
+    # Execute the pie image combiner and capture any errors
+    if ${pieImageCombinerApp}/bin/pie-image-combiner \
       --width ${toString cfg.width} \
       --height ${toString cfg.height} \
       "''${wallpapers[@]}" \
-      "$OUTPUT_PATH"
+      "$OUTPUT_PATH"; then
+      
+      # Verify the output file was created successfully
+      if [[ -f "$OUTPUT_PATH" && -s "$OUTPUT_PATH" ]]; then
+        # Verify it's a valid image
+        if output_mime_type=$(file --mime-type -b "$OUTPUT_PATH" 2>/dev/null) && [[ "$output_mime_type" =~ ^image/ ]]; then
+          echo "Successfully generated wallpaper: $OUTPUT_PATH (type: $output_mime_type)"
+        else
+          echo "ERROR: Generated file is not a valid image: $OUTPUT_PATH (type: $output_mime_type)"
+          exit 1
+        fi
+      else
+        echo "ERROR: Failed to generate wallpaper file or file is empty: $OUTPUT_PATH"
+        exit 1
+      fi
+    else
+      echo "ERROR: pie-image-combiner failed to execute successfully"
+      exit 1
+    fi
       
     # Update stylix to use the new wallpaper
     # We need to create a symlink that matches the expected stylix path pattern
     echo "Setting system wallpaper to: $OUTPUT_PATH"
-    ln -sf "$OUTPUT_PATH" "/etc/nixos/wallpaper.png"
+    
+    # Create symlink with error handling
+    if ln -sf "$OUTPUT_PATH" "/etc/nixos/wallpaper.png"; then
+      echo "DEBUG: Successfully created symlink: /etc/nixos/wallpaper.png -> $OUTPUT_PATH"
+    else
+      echo "WARNING: Failed to create symlink to wallpaper, desktop may not update automatically"
+    fi
 
     # Force stylix to reload the wallpaper
     if command -v "dconf" &> /dev/null; then
