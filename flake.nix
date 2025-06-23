@@ -45,6 +45,9 @@
     stylix.inputs.nixpkgs.follows = "nixpkgs";
     stylix.inputs.home-manager.follows = "home-manager";
 
+    # Hardware detection
+    nixos-facter.url = "github:nix-community/nixos-facter";
+
     # Devshell
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
@@ -61,6 +64,7 @@
       nixvim,
       nixos-generators,
       disko,
+      nixos-facter,
       ...
     }:
     let
@@ -103,6 +107,7 @@
               inputs.stylix.nixosModules.stylix
               inputs.geoclue-prometheus-exporter.nixosModules.default
               inputs.dots-notifier.nixosModules.x86_64-linux.notifier
+              inputs.nixos-facter.nixosModules.facter
               {
                 nixpkgs.config.allowUnfree = true;
                 stylix.enable = true;
