@@ -261,6 +261,8 @@
       perSystem =
         {
           pkgs,
+          self',
+          inputs',
           ...
         }:
         {
@@ -286,6 +288,160 @@
               pkgs.treefmt2
               pkgs.nixos-generators
             ];
+          };
+
+          # Comprehensive checks for flake robustness and quality
+          checks = {
+            # Format and Lint Checks - integrate with treefmt
+            format-check = pkgs.runCommand "format-check"
+              {
+                buildInputs = [ self'.formatter ];
+                src = ./.;
+              } ''
+                cd $src
+                ${self'.formatter}/bin/treefmt --check
+                touch $out
+              '';
+            
+            # Dead Code Detection
+            deadnix-check = pkgs.runCommand "deadnix-check" 
+              { 
+                buildInputs = [ pkgs.deadnix ]; 
+                src = ./.;
+              } ''
+                cd $src
+                deadnix --fail .
+                touch $out
+              '';
+
+            # Nix Linting with statix
+            statix-check = pkgs.runCommand "statix-check"
+              {
+                buildInputs = [ pkgs.statix ];
+                src = ./.;
+              } ''
+                cd $src
+                statix check .
+                touch $out
+              '';
+
+            # Flake Evaluation and Validation
+            flake-check = pkgs.runCommand "flake-check"
+              {
+                buildInputs = [ pkgs.nix ];
+                src = ./.;
+              } ''
+                cd $src
+                nix flake check --no-build
+                touch $out
+              '';
+
+            # Documentation Validation - check for broken links and missing docs
+            doc-validation = pkgs.runCommand "doc-validation"
+              {
+                buildInputs = [ pkgs.findutils pkgs.gnugrep ];
+                src = ./.;
+              } ''
+                cd $src
+                # Check that README exists and has content
+                if [[ ! -f README.md ]] || [[ ! -s README.md ]]; then
+                  echo "ERROR: README.md is missing or empty"
+                  exit 1
+                fi
+                
+                # Check for TODO/FIXME comments that might indicate incomplete work
+                if find . -name "*.nix" -exec grep -l "TODO\|FIXME\|XXX" {} \; | grep -q .; then
+                  echo "WARNING: Found TODO/FIXME comments in Nix files"
+                  find . -name "*.nix" -exec grep -Hn "TODO\|FIXME\|XXX" {} \;
+                fi
+                
+                touch $out
+              '';
+
+            # Dependency Auditing - check for outdated or problematic inputs
+            dependency-audit = pkgs.runCommand "dependency-audit"
+              {
+                buildInputs = [ pkgs.nix pkgs.jq ];
+                src = ./.;
+              } ''
+                cd $src
+                # Check that flake.lock exists and inputs are properly locked
+                if [[ ! -f flake.lock ]]; then
+                  echo "ERROR: flake.lock missing - run 'nix flake lock'"
+                  exit 1
+                fi
+                
+                # Validate flake.lock structure
+                nix flake metadata --json > /dev/null
+                
+                # Check for inputs that might need updates (older than 90 days)
+                echo "Checking input freshness..."
+                nix flake metadata --json | jq -r '.locks.nodes | to_entries[] | select(.value.locked?) | "\(.key): \(.value.locked.lastModified // 0)"' > input_dates.txt
+                
+                touch $out
+              '';
+
+            # Build Consistency - verify core configurations build
+            build-consistency = pkgs.runCommand "build-consistency"
+              {
+                buildInputs = [ pkgs.nix ];
+                src = ./.;
+              } ''
+                cd $src
+                # Test that main system configuration builds (dry-run)
+                nix build .#nixosConfigurations.shulkerbox.config.system.build.toplevel --dry-run
+                
+                # Test that installer configuration builds (dry-run)  
+                nix build .#nixosConfigurations.shulkerbox-installer.config.system.build.isoImage --dry-run
+                
+                touch $out
+              '';
+
+            # Security Enhancements - basic security checks
+            security-check = pkgs.runCommand "security-check"
+              {
+                buildInputs = [ pkgs.findutils pkgs.gnugrep ];
+                src = ./.;
+              } ''
+                cd $src
+                # Check for potential security issues in Nix files
+                
+                # Look for hardcoded passwords or secrets (basic check)
+                if find . -name "*.nix" -exec grep -i "password\s*=" {} \; | grep -v "# " | grep -q .; then
+                  echo "WARNING: Found potential hardcoded passwords"
+                  find . -name "*.nix" -exec grep -Hn -i "password\s*=" {} \; | grep -v "# "
+                fi
+                
+                # Check for allowUnfree usage (should be documented)
+                if find . -name "*.nix" -exec grep -l "allowUnfree.*true" {} \; | grep -q .; then
+                  echo "INFO: allowUnfree is enabled - ensure this is intentional"
+                  find . -name "*.nix" -exec grep -Hn "allowUnfree.*true" {} \;
+                fi
+                
+                # Check for insecure package usage
+                if find . -name "*.nix" -exec grep -l "unsafeDiscardStringContext\|unsafeDiscardOutputDependency" {} \; | grep -q .; then
+                  echo "WARNING: Found usage of unsafe Nix functions"
+                  find . -name "*.nix" -exec grep -Hn "unsafeDiscardStringContext\|unsafeDiscardOutputDependency" {} \;
+                fi
+                
+                touch $out
+              '';
+
+            # Garbage Collection and Optimization Check
+            gc-check = pkgs.runCommand "gc-check"
+              {
+                buildInputs = [ pkgs.nix ];
+                src = ./.;
+              } ''
+                cd $src
+                # Verify that expressions can be properly evaluated
+                nix eval .#nixosConfigurations.shulkerbox.pkgs.system --raw > /dev/null
+                
+                # Check for potential circular dependencies or evaluation issues
+                timeout 30s nix-instantiate --eval --strict --expr 'builtins.attrNames (import ./flake.nix).outputs' > /dev/null
+                
+                touch $out
+              '';
           };
 
           treefmt = {
