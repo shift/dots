@@ -11,6 +11,7 @@
           ./git.nix
           ./direnv.nix
           ./just.nix
+          ./mcp-servers.nix
           ./sway.nix
           ./waybar/default.nix
           ./swaylock.nix
