@@ -2,6 +2,7 @@
 {
   imports = [
     ## Modularize your home.nix by moving statements into other files
+    ./mcp-servers.nix
   ];
   stylix = {
     enable = true;
