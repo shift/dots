@@ -15,6 +15,7 @@
           ./waybar/default.nix
           ./swaylock.nix
           ./options.nix
+          ./mcp.nix
         ];
       };
       common-linux = {

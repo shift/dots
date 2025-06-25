@@ -31,7 +31,44 @@
         enable = true;
       };
       copilot-lua = {
-        enable = false;
+        enable = true;
+        suggestion = {
+          enabled = true;
+          auto_trigger = true;
+          debounce = 75;
+          keymap = {
+            accept = "<M-l>";
+            accept_word = "<M-w>";
+            accept_line = "<M-j>";
+            next = "<M-]>";
+            prev = "<M-[>";
+            dismiss = "<C-]>";
+          };
+        };
+        panel = {
+          enabled = true;
+          auto_refresh = false;
+          keymap = {
+            jump_prev = "[[";
+            jump_next = "]]";
+            accept = "<CR>";
+            refresh = "gr";
+            open = "<M-CR>";
+          };
+          layout = {
+            position = "bottom";
+            ratio = 0.4;
+          };
+        };
+        server_opts_overrides = {
+          trace = "verbose";
+          settings = {
+            advanced = {
+              listCount = 10;
+              inlineSuggestCount = 3;
+            };
+          };
+        };
       };
       lsp-format = {
         enable = true;
