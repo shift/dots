@@ -124,17 +124,16 @@ in
       executable = true;
     };
 
-    # Set environment variables from SOPS secrets if available
-    home.sessionVariables = mkMerge [
-      (mkIf (config.sops.secrets ? github_personal_access_token) {
-        GITHUB_PERSONAL_ACCESS_TOKEN = config.sops.secrets.github_personal_access_token.path;
-      })
-      (mkIf (config.sops.secrets ? brave_api_key) {
-        BRAVE_API_KEY = config.sops.secrets.brave_api_key.path;
-      })
-      (mkIf (config.sops.secrets ? postgres_connection_string) {
-        POSTGRES_CONNECTION_STRING = config.sops.secrets.postgres_connection_string.path;
-      })
-    ];
+    # Note: Environment variables for MCP servers should be set through shell configuration
+    # or system-level environment variables. SOPS secrets are not directly accessible 
+    # in home-manager modules.
+    # 
+    # Example environment variables that may be needed:
+    # - GITHUB_PERSONAL_ACCESS_TOKEN
+    # - BRAVE_API_KEY  
+    # - POSTGRES_CONNECTION_STRING
+    #
+    # These can be set in your shell configuration (e.g., ~/.zshrc) or through
+    # system-level environment variables.
   };
 }
