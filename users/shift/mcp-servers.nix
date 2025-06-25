@@ -1,6 +1,8 @@
 { pkgs, config, lib, ... }:
 
 {
+  imports = [ ./mcp-module.nix ];
+
   # Enable MCP (Model Context Protocol) servers for AI development tools
   services.mcp-servers = {
     enable = true;

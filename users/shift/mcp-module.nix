@@ -86,6 +86,13 @@ in
       };
     };
 
+    # Also create Cursor IDE configuration
+    home.file.".cursor/mcp_settings.json" = mkIf (cfg.servers != {}) {
+      text = builtins.toJSON {
+        mcpServers = cfg.servers;
+      };
+    };
+
     # Install script for MCP server packages
     home.file.".local/bin/install-mcp-servers" = {
       text = ''
@@ -116,5 +123,18 @@ in
       '';
       executable = true;
     };
+
+    # Set environment variables from SOPS secrets if available
+    home.sessionVariables = mkMerge [
+      (mkIf (config.sops.secrets ? github_personal_access_token) {
+        GITHUB_PERSONAL_ACCESS_TOKEN = config.sops.secrets.github_personal_access_token.path;
+      })
+      (mkIf (config.sops.secrets ? brave_api_key) {
+        BRAVE_API_KEY = config.sops.secrets.brave_api_key.path;
+      })
+      (mkIf (config.sops.secrets ? postgres_connection_string) {
+        POSTGRES_CONNECTION_STRING = config.sops.secrets.postgres_connection_string.path;
+      })
+    ];
   };
 }

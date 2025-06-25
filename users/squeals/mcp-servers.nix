@@ -1,6 +1,8 @@
 { pkgs, config, lib, ... }:
 
 {
+  imports = [ ../shift/mcp-module.nix ];
+
   # Minimal MCP servers configuration for squeals user
   services.mcp-servers = {
     enable = true;

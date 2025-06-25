@@ -1,6 +1,8 @@
 { pkgs, config, lib, ... }:
 
 {
+  imports = [ ../shift/mcp-module.nix ];
+
   # Basic MCP servers configuration for dio user
   services.mcp-servers = {
     enable = true;
