@@ -27,6 +27,10 @@
   sops.secrets."cachix_api_key" = {
     neededForUsers = true;
   };
+  sops.secrets."github_copilot_token" = {
+    mode = "0400";
+    owner = "shift";
+  };
   sops.secrets."dio_hashed_passwd" = {
     neededForUsers = true;
     sopsFile = ./../secrets/shulkerbox/secrets.yaml;
@@ -487,6 +491,26 @@
 
     # Optional: you can disable the auto-registration
     # registerWithAlloy = false;
+  };
+
+  # MCP (Model Context Protocol) servers for GitHub Copilot
+  services.mcp-servers = {
+    enable = true;
+    
+    github = {
+      enable = true;
+      # Token will be loaded from SOPS secret
+      tokenFile = config.sops.secrets."github_copilot_token".path;
+    };
+    
+    filesystem = {
+      enable = true;
+      allowedPaths = "/home/shift,/tmp,/home/shift/projects";
+    };
+    
+    shell = {
+      enable = true;
+    };
   };
 
   system.stateVersion = "25.05";
