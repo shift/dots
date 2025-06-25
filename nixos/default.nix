@@ -14,6 +14,7 @@
         ./nix.nix
         ./caches
         ./stylix.nix
+        ./mcp-support.nix
       ];
 
       my-home = {

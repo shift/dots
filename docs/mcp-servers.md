@@ -43,7 +43,15 @@ After applying the NixOS configuration, run:
 
 This will install all the required npm packages for the MCP servers.
 
-### 2. Configure Environment Variables
+### 2. Validate Configuration
+
+Run the validation script to check your setup:
+
+```bash
+./scripts/validate-mcp.sh
+```
+
+### 3. Configure Environment Variables
 
 Set the following environment variables in your shell profile or secrets management:
 
@@ -58,7 +66,7 @@ export BRAVE_API_KEY="your_brave_api_key_here"
 export POSTGRES_CONNECTION_STRING="postgresql://user:password@localhost:5432/dbname"
 ```
 
-### 3. Supported AI Tools
+### 4. Supported AI Tools
 
 The configuration automatically creates config files for:
 
