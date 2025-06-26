@@ -188,7 +188,7 @@
                     openssh
                     # Interactive TUI tools
                     gum
-                    bun  # For interactive guidance
+                    bun # For interactive guidance
                     # TPM and hardware detection
                     tpm2-tools
                     dmidecode
@@ -201,7 +201,7 @@
                     # SOPS and SSH-to-AGE tools for new host setup
                     sops
                     ssh-to-age
-                    qrencode  # For QR code generation
+                    qrencode # For QR code generation
                   ];
 
                   # SSH for remote access
@@ -251,14 +251,14 @@
                   # Add installer message to motd
                   users.motd = ''
                     Welcome to Shulker Installer!
-                    
+
                     Quick Commands:
                       shulker-install     - Full automated installation
                       shulker-status      - Check system status
                       setup-sops          - Set up SOPS for new host (with QR code)
                       install-secureboot  - Install secure boot keys
                       check-setup-mode    - Check if in setup mode
-                    
+
                     For help: shulker-install --help
                   '';
 
