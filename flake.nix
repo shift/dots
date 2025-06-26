@@ -194,7 +194,7 @@
                     dmidecode
                     lshw
                     # Tools for ISO signing (removed from manual script)
-                    sbst
+                    sbsigntools
                     pesign
                     p7zip
                     cdrtools
@@ -358,7 +358,7 @@
             in
             pkgs.runCommand "shulkerbox-installer-signed" 
             {
-              buildInputs = with pkgs; [ sbst pesign p7zip cdrtools xorriso ];
+              buildInputs = with pkgs; [ sbsigntools pesign p7zip cdrtools xorriso ];
             } ''
               mkdir -p $out
               
