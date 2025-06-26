@@ -236,7 +236,7 @@ handle_new_host_setup() {
         echo "AGE Key for SOPS: $age_key"
         echo "======================================"
         echo "Please add this key to .sops.yaml and re-encrypt secrets"
-        read -p "Press Enter when ready to continue..."
+        read -r -p "Press Enter when ready to continue..."
     fi
     
     # Git pull to get updated SOPS configuration
