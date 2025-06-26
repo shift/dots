@@ -266,7 +266,7 @@ check_existing_partitions() {
 	local has_partitions=false
 
 	for device in /dev/sd* /dev/nvme* /dev/vd*; do
-		if [ -b "$device" ] && [[ ! "$device" =~ [0-9]$ ]]; then
+		if [ -b "$device" ] && [[ ! $device =~ [0-9]$ ]]; then
 			# Check if this device has partitions
 			if lsblk "$device" --output NAME --noheadings | grep -q "├\|└"; then
 				log "INFO: Found existing partitions on $device"
