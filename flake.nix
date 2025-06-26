@@ -181,6 +181,17 @@
                     curl
                     nixos-anywhere
                     disko
+                    sbctl
+                    util-linux
+                    xxd
+                    file
+                    openssh
+                    # Tools for ISO signing
+                    sbsigntools
+                    pesign
+                    p7zip
+                    cdrtools
+                    xorriso
                   ];
 
                   # SSH for remote access
@@ -206,6 +217,41 @@
                   # ISO-specific configuration
                   system.stateVersion = lib.mkForce "25.05";
 
+                  # Create convenient aliases for installer scripts
+                  environment.shellAliases = {
+                    shulker-install = "/installer-scripts/shulker-autoinstall.sh";
+                    shulker-status = "/installer-scripts/shulker-autoinstall.sh status";
+                    install-secureboot = "/installer-scripts/install-secureboot-keys.sh";
+                    check-setup-mode = "/installer-scripts/detect-setup-mode.sh";
+                  };
+
+                  # Add installer message to motd
+                  users.motd = ''
+                    Welcome to Shulker Installer!
+                    
+                    Quick Commands:
+                      shulker-install     - Full automated installation
+                      shulker-status      - Check system status
+                      install-secureboot  - Install secure boot keys
+                      check-setup-mode    - Check if in setup mode
+                    
+                    For help: shulker-install --help
+                  '';
+
+                  # Optional auto-installer service (disabled by default)
+                  systemd.services.shulker-auto-installer = {
+                    description = "Shulker Auto Installer Service";
+                    wantedBy = [ ]; # Disabled by default - enable with: systemctl enable shulker-auto-installer
+                    after = [ "network-online.target" ];
+                    wants = [ "network-online.target" ];
+                    serviceConfig = {
+                      Type = "oneshot";
+                      ExecStart = "/installer-scripts/shulker-autoinstall.sh install";
+                      StandardOutput = "journal+console";
+                      StandardError = "journal+console";
+                    };
+                  };
+
                   # Explicitly configure the ISO image
                   isoImage = {
                     # Customize ISO naming
@@ -217,6 +263,10 @@
                       {
                         source = ./.;
                         target = "/repo";
+                      }
+                      {
+                        source = ./installer-scripts;
+                        target = "/installer-scripts";
                       }
                       {
                         source = /etc/ssh;
