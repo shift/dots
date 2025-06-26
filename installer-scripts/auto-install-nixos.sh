@@ -79,26 +79,28 @@ if $DEBUG; then
     set -x
 fi
 
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then
+# Check if running as root (except for dry-run)
+if [ "$EUID" -ne 0 ] && ! $DRY_RUN; then
     log "ERROR: This script must be run as root"
     exit 1
 fi
 
-# Check if required directories exist
-if [ ! -d "$REPO_DIR" ]; then
-    log "ERROR: Repository directory not found: $REPO_DIR"
-    exit 1
+# Check if required directories exist (skip in dry-run)
+if ! $DRY_RUN; then
+    if [ ! -d "$REPO_DIR" ]; then
+        log "ERROR: Repository directory not found: $REPO_DIR"
+        exit 1
+    fi
 fi
 
-# Check if nixos-anywhere is available
-if ! command -v nixos-anywhere >/dev/null 2>&1; then
+# Check if nixos-anywhere is available (skip in dry-run)
+if ! $DRY_RUN && ! command -v nixos-anywhere >/dev/null 2>&1; then
     log "ERROR: nixos-anywhere not found in PATH"
     exit 1
 fi
 
-# Check if disko is available  
-if ! command -v disko >/dev/null 2>&1; then
+# Check if disko is available (skip in dry-run)
+if ! $DRY_RUN && ! command -v disko >/dev/null 2>&1; then
     log "ERROR: disko not found in PATH"
     exit 1
 fi

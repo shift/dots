@@ -214,6 +214,18 @@
                   # Allow passwordless sudo
                   security.sudo.wheelNeedsPassword = false;
 
+                  # Ensure installer scripts are executable
+                  system.activationScripts.makeInstallerScriptsExecutable = ''
+                    if [ -d /installer-scripts ]; then
+                      chmod +x /installer-scripts/*.sh
+                      # Create convenient symlinks in /usr/local/bin
+                      mkdir -p /usr/local/bin
+                      ln -sf /installer-scripts/shulker-autoinstall.sh /usr/local/bin/shulker-install
+                      ln -sf /installer-scripts/detect-setup-mode.sh /usr/local/bin/check-setup-mode
+                      ln -sf /installer-scripts/install-secureboot-keys.sh /usr/local/bin/install-secureboot
+                    fi
+                  '';
+
                   # ISO-specific configuration
                   system.stateVersion = lib.mkForce "25.05";
 
