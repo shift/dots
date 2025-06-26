@@ -29,10 +29,13 @@ Usage: $0 [OPTIONS] [COMMAND]
 
 Commands:
     install         Automated installation with smart detection (default)
+                   - Checks SOPS decryption status (new vs existing host)
+                   - Handles new host SSH-to-AGE key setup
                    - Checks TPM2 availability
                    - Detects existing partitions
                    - Guides user through issues
                    - Auto-installs when safe
+    setup-sops      Set up SOPS for new host (generate keys, display QR code)
     setup-mode      Check if system is in setup mode
     install-keys    Install secure boot keys only
     install-nixos   Install NixOS only
@@ -149,6 +152,110 @@ check_tpm2() {
     
     log "WARNING: No functional TPM2 detected"
     return 1
+}
+
+# Function to check if SOPS secrets can be decrypted (indicating new vs existing host)
+check_sops_decryption() {
+    log "INFO: Checking if SOPS secrets can be decrypted"
+    
+    local test_secret="/repo/secrets/common.yaml"
+    
+    if [ ! -f "$test_secret" ]; then
+        log "WARNING: No common secrets file found at $test_secret"
+        return 1
+    fi
+    
+    # Try to decrypt the secrets file
+    if sops -d "$test_secret" >/dev/null 2>&1; then
+        log "INFO: SOPS secrets can be decrypted - this appears to be a known host"
+        return 0
+    else
+        log "INFO: Cannot decrypt SOPS secrets - this appears to be a new host"
+        return 1
+    fi
+}
+
+# Function to handle new host SSH key generation and SOPS configuration
+handle_new_host_setup() {
+    log "INFO: Setting up new host for SOPS integration"
+    
+    # Generate SSH keys if they don't exist
+    local ssh_dir="/etc/ssh"
+    local ssh_key="$ssh_dir/ssh_host_ed25519_key"
+    
+    if [ ! -f "$ssh_key" ]; then
+        log "INFO: Generating SSH host keys"
+        ssh-keygen -t ed25519 -f "$ssh_key" -N "" -C "root@$(hostname)"
+    fi
+    
+    # Convert SSH key to AGE key
+    log "INFO: Converting SSH key to AGE key for SOPS"
+    local age_key
+    age_key=$(ssh-to-age < "$ssh_key.pub")
+    
+    if [ -z "$age_key" ]; then
+        log "ERROR: Failed to convert SSH key to AGE key"
+        return 1
+    fi
+    
+    log "INFO: Generated AGE key: $age_key"
+    
+    # Display the AGE key as a QR code using gum
+    if command -v qrencode >/dev/null 2>&1 && command -v gum >/dev/null 2>&1; then
+        log "INFO: Displaying AGE key as QR code"
+        
+        # Create a temporary file for the QR code
+        local qr_file="/tmp/age_key_qr.txt"
+        qrencode -t ANSI256 -o "$qr_file" "$age_key"
+        
+        gum style --foreground 212 --border double --padding "1 2" \
+            "New Host Detected - SOPS Configuration Required" \
+            "" \
+            "This host needs to be added to the SOPS configuration." \
+            "AGE Key: $age_key" \
+            "" \
+            "QR Code for easy copying:"
+        
+        cat "$qr_file"
+        echo
+        
+        gum style --foreground 214 --padding "1 2" \
+            "Instructions:" \
+            "1. Add this AGE key to .sops.yaml in your repository" \
+            "2. Re-encrypt secrets with the new key" \
+            "3. Commit and push the changes" \
+            "4. Press Enter when ready to continue"
+        
+        # Wait for user to add the key to SOPS
+        gum input --placeholder "Press Enter when you've added the key to SOPS and pushed changes..."
+        
+        rm -f "$qr_file"
+    else
+        log "WARNING: QR code tools not available, displaying key manually"
+        echo "======================================"
+        echo "AGE Key for SOPS: $age_key"
+        echo "======================================"
+        echo "Please add this key to .sops.yaml and re-encrypt secrets"
+        read -p "Press Enter when ready to continue..."
+    fi
+    
+    # Git pull to get updated SOPS configuration
+    log "INFO: Pulling latest repository changes"
+    cd /repo
+    if git pull origin main; then
+        log "INFO: Repository updated successfully"
+    else
+        log "WARNING: Failed to pull latest changes, continuing with existing repository"
+    fi
+    
+    # Test SOPS decryption again
+    if check_sops_decryption; then
+        log "INFO: SOPS secrets can now be decrypted successfully"
+        return 0
+    else
+        log "ERROR: SOPS secrets still cannot be decrypted after configuration"
+        return 1
+    fi
 }
 
 # Function to check for existing partitions
@@ -403,13 +510,26 @@ show_status() {
     # Check required tools
     echo
     echo "=== Required Tools ==="
-    for tool in nixos-anywhere disko sbctl gum tpm2_getcap; do
+    for tool in nixos-anywhere disko sbctl gum tpm2_getcap sops ssh-to-age qrencode; do
         if command -v "$tool" >/dev/null 2>&1; then
             echo "✓ $tool available"
         else
             echo "✗ $tool not found"
         fi
     done
+    
+    # Check SOPS status
+    echo
+    echo "=== SOPS Status ==="
+    if [ -f /repo/secrets/common.yaml ]; then
+        if check_sops_decryption >/dev/null 2>&1; then
+            echo "✓ SOPS secrets can be decrypted (known host)"
+        else
+            echo "⚠ SOPS secrets cannot be decrypted (new host - will need configuration)"
+        fi
+    else
+        echo "✗ No SOPS secrets file found"
+    fi
 }
 
 # Main execution
@@ -418,6 +538,15 @@ log "INFO: Starting Shulker Installer - Command: $COMMAND"
 case "$COMMAND" in
     "status")
         show_status
+        ;;
+        
+    "setup-sops")
+        if check_sops_decryption; then
+            log "INFO: SOPS secrets can already be decrypted - no setup needed"
+        else
+            log "INFO: Setting up SOPS for new host"
+            handle_new_host_setup
+        fi
         ;;
         
     "setup-mode")
@@ -445,14 +574,23 @@ case "$COMMAND" in
     "install")
         log "INFO: Starting automated installation with smart detection"
         
-        # Step 1: Check TPM2 availability
+        # Step 1: Check SOPS secrets decryption (new vs existing host)
+        if ! check_sops_decryption; then
+            log "INFO: New host detected - setting up SOPS integration"
+            if ! handle_new_host_setup; then
+                log "ERROR: Failed to set up SOPS for new host"
+                exit 1
+            fi
+        fi
+        
+        # Step 2: Check TPM2 availability
         if ! check_tpm2; then
             if ! interactive_guidance "no_tpm"; then
                 exit 1
             fi
         fi
         
-        # Step 2: Check for existing partitions
+        # Step 3: Check for existing partitions
         if check_existing_partitions; then
             log "WARNING: Existing partitions detected"
             if ! interactive_guidance "existing_partitions"; then
@@ -460,7 +598,7 @@ case "$COMMAND" in
             fi
         fi
         
-        # Step 3: Check setup mode unless skipping secure boot
+        # Step 4: Check setup mode unless skipping secure boot
         if ! $SKIP_SECUREBOOT; then
             if ! check_setup_mode; then
                 log "WARNING: System is not in Secure Boot setup mode"
@@ -485,7 +623,7 @@ case "$COMMAND" in
             log "INFO: Skipping Secure Boot key installation"
         fi
         
-        # Step 4: Install NixOS unless skipping
+        # Step 5: Install NixOS unless skipping
         if ! $SKIP_NIXOS; then
             if ! install_nixos; then
                 log "ERROR: Failed to install NixOS"

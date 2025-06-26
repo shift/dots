@@ -199,6 +199,10 @@
                     p7zip
                     cdrtools
                     xorriso
+                    # SOPS and SSH-to-AGE tools for new host setup
+                    sops
+                    ssh-to-age
+                    qrencode  # For QR code generation
                   ];
 
                   # SSH for remote access
@@ -240,6 +244,7 @@
                   environment.shellAliases = {
                     shulker-install = "/installer-scripts/shulker-autoinstall.sh";
                     shulker-status = "/installer-scripts/shulker-autoinstall.sh status";
+                    setup-sops = "/installer-scripts/shulker-autoinstall.sh setup-sops";
                     install-secureboot = "/installer-scripts/install-secureboot-keys.sh";
                     check-setup-mode = "/installer-scripts/detect-setup-mode.sh";
                   };
@@ -251,6 +256,7 @@
                     Quick Commands:
                       shulker-install     - Full automated installation
                       shulker-status      - Check system status
+                      setup-sops          - Set up SOPS for new host (with QR code)
                       install-secureboot  - Install secure boot keys
                       check-setup-mode    - Check if in setup mode
                     

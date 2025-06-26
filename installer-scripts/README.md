@@ -8,6 +8,8 @@ This directory contains smart automation scripts for the shulker-installer ISO t
 **Main smart orchestration script** that coordinates the entire installation process with intelligent detection and user guidance.
 
 **New Smart Features:**
+- 🔐 **SOPS Integration**: Detects new vs existing hosts, sets up SSH-to-AGE keys automatically
+- 📱 **QR Code Display**: Shows AGE keys as QR codes for easy copying to SOPS configuration
 - 🔍 **TPM2 Detection**: Checks for TPM2 availability for enhanced security
 - 💽 **Partition Detection**: Detects existing partitions and guides user appropriately  
 - 🔒 **Setup Mode Detection**: Checks Secure Boot setup mode before proceeding
@@ -16,8 +18,11 @@ This directory contains smart automation scripts for the shulker-installer ISO t
 
 Usage:
 ```bash
-# Smart automated installation (recommended)
+# Smart automated installation with SOPS setup (recommended)
 shulker-autoinstall.sh
+
+# Set up SOPS for new host (generates SSH-to-AGE key with QR code)
+shulker-autoinstall.sh setup-sops
 
 # Check comprehensive system status  
 shulker-autoinstall.sh status
@@ -33,16 +38,19 @@ shulker-autoinstall.sh --force install
 ```
 
 **Behavior Flow:**
-1. **TPM2 Check**: Warns if no TPM2 detected, offers guidance
-2. **Partition Check**: If existing partitions found, provides options:
+1. **SOPS Check**: Determines if this is a new host or existing host
+   - **New Host**: Generates SSH-to-AGE key, displays QR code, waits for SOPS configuration
+   - **Existing Host**: Continues with normal flow
+2. **TPM2 Check**: Warns if no TPM2 detected, offers guidance
+3. **Partition Check**: If existing partitions found, provides options:
    - View partitions and continue manually
    - Backup and wipe (with confirmations)
    - Cancel installation
-3. **Setup Mode Check**: If not in setup mode, provides options:
+4. **Setup Mode Check**: If not in setup mode, provides options:
    - Instructions to enter BIOS/UEFI
    - Skip Secure Boot setup
    - Cancel installation
-4. **Auto-Install**: Proceeds automatically if all checks pass
+5. **Auto-Install**: Proceeds automatically if all checks pass
 
 ### `detect-setup-mode.sh` 
 Detects if the system is in Secure Boot setup mode by checking EFI variables.
@@ -104,11 +112,14 @@ The signed ISO build will:
 When booted from the shulker-installer ISO, you can use these convenient aliases:
 
 ```bash
-# Check comprehensive system status (TPM, partitions, setup mode, etc.)
+# Check comprehensive system status (TPM, partitions, setup mode, SOPS, etc.)
 shulker-status
 
 # Smart automated installation with interactive guidance
 shulker-install
+
+# Set up SOPS for new host (generates SSH-to-AGE key with QR code)
+setup-sops
 
 # Install secure boot keys only  
 install-secureboot
@@ -117,16 +128,48 @@ install-secureboot
 check-setup-mode
 ```
 
+## SOPS New Host Setup
+
+When installing on a new host that isn't configured in the SOPS secrets, the installer will automatically:
+
+1. **Detect** that SOPS secrets cannot be decrypted
+2. **Generate** SSH host keys for the new machine  
+3. **Convert** SSH key to AGE key format for SOPS
+4. **Display** the AGE key as a QR code for easy copying
+5. **Wait** for you to add the key to `.sops.yaml` and push changes
+6. **Pull** the updated repository and continue installation
+
+### Manual SOPS Setup
+
+You can also run SOPS setup separately:
+
+```bash
+# Run SOPS setup for new host
+setup-sops
+```
+
+This will:
+- Generate SSH keys if they don't exist
+- Show AGE key as QR code  
+- Wait for SOPS configuration updates
+- Pull latest repository changes
+
 ### Installation Flow
 
 1. **Boot** from the shulker-installer ISO
 2. **Run** `shulker-install` for smart automated installation
-3. **Follow guidance** if issues are detected:
+3. **SOPS Setup** (if new host):
+   - QR code displayed with AGE key
+   - Add key to `.sops.yaml` in your repository
+   - Re-encrypt secrets with new key
+   - Commit and push changes
+   - Press Enter to continue
+4. **Follow guidance** if other issues are detected:
    - TPM2 missing → Optional guidance to enable in BIOS  
    - Existing partitions → Choose to view/wipe/cancel
    - Not in setup mode → Instructions for BIOS setup
-4. **Automatic installation** proceeds when conditions are met
-5. **Reboot** when complete
+5. **Automatic installation** proceeds when conditions are met
+6. **Reboot** when complete
 
 ### Manual Steps (if needed)
 
