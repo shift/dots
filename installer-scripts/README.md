@@ -1,18 +1,25 @@
 # Shulker Installer Scripts
 
-This directory contains automation scripts for the shulker-installer ISO to provide seamless installation with Secure Boot support.
+This directory contains smart automation scripts for the shulker-installer ISO to provide seamless installation with Secure Boot support and interactive guidance.
 
 ## Scripts Overview
 
 ### `shulker-autoinstall.sh`
-**Main orchestration script** that coordinates the entire installation process.
+**Main smart orchestration script** that coordinates the entire installation process with intelligent detection and user guidance.
+
+**New Smart Features:**
+- 🔍 **TPM2 Detection**: Checks for TPM2 availability for enhanced security
+- 💽 **Partition Detection**: Detects existing partitions and guides user appropriately  
+- 🔒 **Setup Mode Detection**: Checks Secure Boot setup mode before proceeding
+- 💬 **Interactive Guidance**: Uses `gum` TUI for user-friendly guidance when issues arise
+- 🚀 **Auto-Install**: Proceeds automatically when all conditions are met
 
 Usage:
 ```bash
-# Full automated installation
+# Smart automated installation (recommended)
 shulker-autoinstall.sh
 
-# Check system status
+# Check comprehensive system status  
 shulker-autoinstall.sh status
 
 # Install only secure boot keys
@@ -21,9 +28,21 @@ shulker-autoinstall.sh install-keys
 # Install only NixOS (skip secure boot)
 shulker-autoinstall.sh install-nixos
 
-# Skip secure boot and install NixOS only
-shulker-autoinstall.sh --skip-secureboot install
+# Force installation despite warnings
+shulker-autoinstall.sh --force install
 ```
+
+**Behavior Flow:**
+1. **TPM2 Check**: Warns if no TPM2 detected, offers guidance
+2. **Partition Check**: If existing partitions found, provides options:
+   - View partitions and continue manually
+   - Backup and wipe (with confirmations)
+   - Cancel installation
+3. **Setup Mode Check**: If not in setup mode, provides options:
+   - Instructions to enter BIOS/UEFI
+   - Skip Secure Boot setup
+   - Cancel installation
+4. **Auto-Install**: Proceeds automatically if all checks pass
 
 ### `detect-setup-mode.sh` 
 Detects if the system is in Secure Boot setup mode by checking EFI variables.
@@ -52,31 +71,76 @@ Features:
 - SSH key support for remote installations
 - Dry-run mode for testing
 
-### `sign-iso.sh`
-Signs the installer ISO with Secure Boot keys for compatibility.
+### `sign-iso.sh` (DEPRECATED)
+⚠️ **This script is deprecated.** ISO signing is now integrated into the flake build process.
 
-Features:
-- Extracts and re-signs EFI boot files
-- Recreates signed ISO
-- Signature verification
-- Multiple ISO creation tool support
+**New Way:** Use `nix build .#shulkerbox-installer-signed` to build a signed ISO automatically.
+
+The flake will:
+- Build the unsigned ISO
+- Sign EFI bootloaders if Secure Boot keys are available at `/etc/secureboot`
+- Create the final signed ISO
+- Handle all signing complexity automatically
+
+## ISO Building & Signing
+
+### Building Regular ISO
+```bash
+nix build .#nixosConfigurations.shulkerbox-installer.config.system.build.isoImage
+```
+
+### Building Signed ISO (New!)
+```bash
+nix build .#shulkerbox-installer-signed
+```
+
+The signed ISO build will:
+- Automatically sign EFI bootloaders if `/etc/secureboot` keys exist
+- Fall back to unsigned ISO if no keys available
+- Include proper UEFI boot structure for Secure Boot compatibility
 
 ## Quick Start
 
 When booted from the shulker-installer ISO, you can use these convenient aliases:
 
 ```bash
-# Check system status and requirements
+# Check comprehensive system status (TPM, partitions, setup mode, etc.)
 shulker-status
 
-# Full automated installation (secure boot + NixOS)
+# Smart automated installation with interactive guidance
 shulker-install
 
-# Install secure boot keys only
+# Install secure boot keys only  
 install-secureboot
 
 # Check if in setup mode
 check-setup-mode
+```
+
+### Installation Flow
+
+1. **Boot** from the shulker-installer ISO
+2. **Run** `shulker-install` for smart automated installation
+3. **Follow guidance** if issues are detected:
+   - TPM2 missing → Optional guidance to enable in BIOS  
+   - Existing partitions → Choose to view/wipe/cancel
+   - Not in setup mode → Instructions for BIOS setup
+4. **Automatic installation** proceeds when conditions are met
+5. **Reboot** when complete
+
+### Manual Steps (if needed)
+
+If the automated installer needs manual intervention:
+
+```bash
+# View current disk layout
+lsblk
+
+# Manually partition disks with disko  
+disko --mode disko /repo/disks/shulkerbox/disko.nix
+
+# Continue with NixOS installation only
+shulker-install install-nixos
 ```
 
 ## Installation Process

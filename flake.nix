@@ -186,7 +186,14 @@
                     xxd
                     file
                     openssh
-                    # Tools for ISO signing
+                    # Interactive TUI tools
+                    gum
+                    bun  # For interactive guidance
+                    # TPM and hardware detection
+                    tpm2-tools
+                    dmidecode
+                    lshw
+                    # Tools for ISO signing (removed from manual script)
                     sbsigntools
                     pesign
                     p7zip
@@ -338,6 +345,61 @@
           # };
           #
           # packages.default = self'.packages.activate;
+          
+          packages.shulkerbox-installer-signed = 
+            let
+              unsignedISO = self.nixosConfigurations.shulkerbox-installer.config.system.build.isoImage;
+            in
+            pkgs.runCommand "shulkerbox-installer-signed" 
+            {
+              buildInputs = with pkgs; [ sbsigntools pesign p7zip cdrtools xorriso ];
+            } ''
+              mkdir -p $out
+              
+              # Copy the unsigned ISO
+              cp ${unsignedISO}/iso/*.iso $out/
+              
+              # If secureboot keys exist, sign the ISO
+              if [ -d /etc/secureboot ]; then
+                echo "Signing ISO with Secure Boot keys..."
+                iso_file=$(ls $out/*.iso)
+                
+                # Extract bootloader from ISO for signing
+                mkdir -p temp_iso
+                cd temp_iso
+                
+                # Mount and extract ISO contents
+                7z x "$iso_file"
+                
+                # Sign the EFI bootloader if it exists
+                if [ -f EFI/boot/bootx64.efi ]; then
+                  sbsign --key /etc/secureboot/keys/db/db.key \
+                         --cert /etc/secureboot/keys/db/db.pem \
+                         --output EFI/boot/bootx64.efi.signed \
+                         EFI/boot/bootx64.efi
+                  mv EFI/boot/bootx64.efi.signed EFI/boot/bootx64.efi
+                fi
+                
+                # Recreate the ISO
+                mkisofs -o "$out/$(basename "$iso_file" .iso)-signed.iso" \
+                        -b isolinux/isolinux.bin \
+                        -c isolinux/boot.cat \
+                        -no-emul-boot \
+                        -boot-load-size 4 \
+                        -boot-info-table \
+                        -eltorito-alt-boot \
+                        -e EFI/boot/bootx64.efi \
+                        -no-emul-boot \
+                        -isohybrid-gpt-basdat \
+                        .
+                        
+                cd ..
+                rm -rf temp_iso
+              else
+                echo "No Secure Boot keys found at /etc/secureboot, skipping signing"
+              fi
+            '';
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pkgs.git
