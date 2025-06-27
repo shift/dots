@@ -292,11 +292,7 @@
                         target = "/installer-scripts";
                       }
                       {
-                        source = /etc/ssh;
-                        target = "/ssh_keys";
-                      }
-                      {
-                        source = /etc/secureboot;
+                        source = ./secrets/secureboot;
                         target = "/secureboot";
                       }
                     ];
@@ -356,6 +352,7 @@
             shulkerbox-installer-signed =
               let
                 baseIso = self.nixosConfigurations.shulkerbox-installer.config.system.build.isoImage;
+                securebootKeys = ./secrets/secureboot/x1y;
               in
               pkgs.runCommand "shulkerbox-installer-signed-1.0.0"
                 {
@@ -363,9 +360,8 @@
                     sbsigntools
                     coreutils
                     util-linux
+                    findutils
                   ];
-                  # Include the secureboot keys as a build input if they exist
-                  inherit (pkgs.lib) optionalAttrs pathExists;
                   meta = with pkgs.lib; {
                     description = "Shulkerbox installer ISO with Secure Boot signing";
                     license = licenses.mit;
@@ -387,9 +383,23 @@
                   echo "Found ISO: $isoFile"
                   cp "$isoFile" ./installer.iso
 
-                  # Always create unsigned copy for now (signing can be done externally)
-                  echo "Creating unsigned ISO copy..."
-                  cp installer.iso installer-signed.iso
+                  # Check if we have secureboot keys available
+                  if [ -d "${securebootKeys}" ] && [ -f "${securebootKeys}/db/db.key" ] && [ -f "${securebootKeys}/db/db.pem" ]; then
+                    echo "Secureboot keys found, signing ISO..."
+                    
+                    # Sign the ISO with the db key
+                    sbsign --key "${securebootKeys}/db/db.key" --cert "${securebootKeys}/db/db.pem" --output installer-signed.iso installer.iso
+                    
+                    if [ $? -eq 0 ]; then
+                      echo "ISO signed successfully"
+                    else
+                      echo "Signing failed, creating unsigned copy"
+                      cp installer.iso installer-signed.iso
+                    fi
+                  else
+                    echo "No secureboot keys found, creating unsigned copy"
+                    cp installer.iso installer-signed.iso
+                  fi
 
                   # Install outputs
                   mkdir -p $out
@@ -399,11 +409,12 @@
                   ln -s installer-signed.iso $out/shulkerbox-installer-signed.iso
 
                   # Create metadata
-                  cat > $out/build-info.txt << 'EOF'
+                  cat > $out/build-info.txt << EOF
                   Shulkerbox Installer ISO
                   System: ${system}
-                  Base ISO: installer.iso
-                  Status: Unsigned (sign externally if needed)
+                  Base ISO: $(basename "$isoFile")
+                  Signed: $([ -f "${securebootKeys}/db/db.key" ] && echo "Yes" || echo "No")
+                  Build: $(date)
                   EOF
                 '';
           };
