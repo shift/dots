@@ -196,7 +196,7 @@
                     # Archive and compression tools
                     p7zip
                     # SOPS and secure boot tools
-                    sbsigntools
+		    sbctl
                     sops
                     # SOPS and SSH-to-AGE tools for new host setup
                     sops
