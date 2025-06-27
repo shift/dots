@@ -335,6 +335,7 @@
       perSystem =
         {
           pkgs,
+          system,
           ...
         }:
         {
@@ -350,6 +351,82 @@
           # };
           #
           # packages.default = self'.packages.activate;
+
+          packages = {
+            # Signed installer ISO with Secure Boot keys
+            shulkerbox-installer-signed = 
+              let
+                baseIso = self.nixosConfigurations.shulkerbox-installer.config.system.build.isoImage;
+                securebootKeys = ./secrets/secureboot/x1y;
+              in
+              pkgs.stdenv.mkDerivation rec {
+                pname = "shulkerbox-installer-signed";
+                version = "1.0.0";
+
+                src = baseIso;
+
+                buildInputs = with pkgs; [
+                  sbsigntools
+                  coreutils
+                  util-linux
+                ];
+
+                buildPhase = ''
+                  echo "Preparing ISO for signing..."
+                  
+                  # Find the ISO file
+                  isoFile=$(find $src -name "*.iso" | head -1)
+                  if [ -z "$isoFile" ]; then
+                    echo "Error: No ISO file found in base build"
+                    exit 1
+                  fi
+                  
+                  echo "Found ISO: $isoFile"
+                  cp "$isoFile" ./installer.iso
+                  
+                  # Check for Secure Boot keys
+                  if [ -f "${securebootKeys}/db/db.key" ] && [ -f "${securebootKeys}/db/db.pem" ]; then
+                    echo "Signing ISO with Secure Boot keys..."
+                    
+                    # Sign the ISO
+                    sbsign \
+                      --key "${securebootKeys}/db/db.key" \
+                      --cert "${securebootKeys}/db/db.pem" \
+                      --output installer-signed.iso \
+                      installer.iso
+                    
+                    echo "✅ ISO signed successfully with Secure Boot keys!"
+                  else
+                    echo "⚠️  Warning: Secure Boot keys not found at ${securebootKeys}"
+                    echo "Creating unsigned copy..."
+                    cp installer.iso installer-signed.iso
+                  fi
+                '';
+
+                installPhase = ''
+                  mkdir -p $out
+                  cp installer-signed.iso $out/
+                  
+                  # Create a convenient symlink with a predictable name
+                  ln -s installer-signed.iso $out/shulkerbox-installer-signed.iso
+                  
+                  # Create metadata
+                  cat > $out/build-info.txt << EOF
+                  Shulkerbox Installer ISO (Secure Boot Signed)
+                  Built: $(date)
+                  System: ${system}
+                  Base ISO: $(basename "$src")
+                  Signed: $(test -f "${securebootKeys}/db/db.key" && echo "Yes" || echo "No")
+                  EOF
+                '';
+
+                meta = with pkgs.lib; {
+                  description = "Shulkerbox installer ISO with Secure Boot signing";
+                  license = licenses.mit;
+                  platforms = platforms.linux;
+                };
+              };
+          };
 
           devShells.default = pkgs.mkShell {
             buildInputs = [
