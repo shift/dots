@@ -196,7 +196,7 @@
                     # Archive and compression tools
                     p7zip
                     # SOPS and secure boot tools
-		    sbctl
+                    sbctl
                     sops
                     # SOPS and SSH-to-AGE tools for new host setup
                     sops
@@ -213,9 +213,9 @@
                     };
                   };
 
-                  # Temporary root access
+                  # Temporary root access (override any conflicting password settings)
                   users.users.root = {
-                    password = "nixos"; # CHANGE IMMEDIATELY
+                    initialPassword = lib.mkForce "nixos"; # CHANGE IMMEDIATELY
                     openssh.authorizedKeys.keys = [
                       # Add your SSH public key here
                     ];
@@ -354,36 +354,37 @@
 
           packages = {
             # Signed installer ISO with Secure Boot keys
-            shulkerbox-installer-signed = 
+            shulkerbox-installer-signed =
               let
                 baseIso = self.nixosConfigurations.shulkerbox-installer.config.system.build.isoImage;
                 securebootKeys = ./secrets/secureboot/x1y;
               in
-              pkgs.stdenv.mkDerivation rec {
-                pname = "shulkerbox-installer-signed";
-                version = "1.0.0";
-
-                src = baseIso;
-
-                buildInputs = with pkgs; [
-                  sbsigntools
-                  coreutils
-                  util-linux
-                ];
-
-                buildPhase = ''
+              pkgs.runCommand "shulkerbox-installer-signed-1.0.0"
+                {
+                  buildInputs = with pkgs; [
+                    sbsigntools
+                    coreutils
+                    util-linux
+                  ];
+                  meta = with pkgs.lib; {
+                    description = "Shulkerbox installer ISO with Secure Boot signing";
+                    license = licenses.mit;
+                    platforms = platforms.linux;
+                  };
+                }
+                ''
                   echo "Preparing ISO for signing..."
-                  
-                  # Find the ISO file
-                  isoFile=$(find $src -name "*.iso" | head -1)
+
+                  # Find the ISO file in the base build
+                  isoFile=$(find ${baseIso} -name "*.iso" | head -1)
                   if [ -z "$isoFile" ]; then
                     echo "Error: No ISO file found in base build"
                     exit 1
                   fi
-                  
+
                   echo "Found ISO: $isoFile"
                   cp "$isoFile" ./installer.iso
-                  
+
                   # Check for Secure Boot keys
                   if [ -f "${securebootKeys}/db/db.key" ] && [ -f "${securebootKeys}/db/db.pem" ]; then
                     echo "Signing ISO with Secure Boot keys..."
@@ -401,31 +402,23 @@
                     echo "Creating unsigned copy..."
                     cp installer.iso installer-signed.iso
                   fi
-                '';
 
-                installPhase = ''
+                  # Install outputs
                   mkdir -p $out
                   cp installer-signed.iso $out/
-                  
+
                   # Create a convenient symlink with a predictable name
                   ln -s installer-signed.iso $out/shulkerbox-installer-signed.iso
-                  
+
                   # Create metadata
                   cat > $out/build-info.txt << EOF
                   Shulkerbox Installer ISO (Secure Boot Signed)
                   Built: $(date)
                   System: ${system}
-                  Base ISO: $(basename "$src")
+                  Base ISO: $(basename "$isoFile")
                   Signed: $(test -f "${securebootKeys}/db/db.key" && echo "Yes" || echo "No")
                   EOF
                 '';
-
-                meta = with pkgs.lib; {
-                  description = "Shulkerbox installer ISO with Secure Boot signing";
-                  license = licenses.mit;
-                  platforms = platforms.linux;
-                };
-              };
           };
 
           devShells.default = pkgs.mkShell {
