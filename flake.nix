@@ -196,7 +196,6 @@
                     # Archive and compression tools
                     p7zip
                     # SOPS and secure boot tools
-                    sbctl
                     sops
                     # SOPS and SSH-to-AGE tools for new host setup
                     sops
@@ -362,7 +361,7 @@
               pkgs.runCommand "shulkerbox-installer-signed-1.0.0"
                 {
                   buildInputs = with pkgs; [
-                    sbsigntools
+		    sbctl
                     coreutils
                     util-linux
                   ];
