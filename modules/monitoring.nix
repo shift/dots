@@ -158,9 +158,7 @@ in
       after = [ "network.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.grafana-alloy}/bin/alloy --config.file=${
-          config.sops.templates."grafana-alloy/config.yaml".path
-        }";
+        ExecStart = "${pkgs.grafana-alloy}/bin/alloy run /run/secrets/rendered/grafana-alloy";
         Restart = "always";
         User = "nobody";
         Group = "nobody";
