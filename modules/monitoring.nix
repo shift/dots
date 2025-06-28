@@ -172,77 +172,77 @@ in
     # Configure Grafana Alloy
     sops.templates."grafana-alloy/config.yaml".owner = "nobody";
     sops.templates."grafana-alloy/config.yaml".content = ''
-      server:
-        log_level: info
+       server {
+         log_level = "info"
+       }
 
-      metrics:
-        global:
-          scrape_interval: 15s
-          external_labels:
-            host: ${config.networking.hostName}
-        
-        configs:
-          - name: integrations
-            remote_write:
-              - url: ${cfg.grafanaCloud.url}
-                basic_auth:
-                  username: ${cfg.grafanaCloud.username}
-                  password: ${config.sops.placeholder.grafana_api_token}
-                queue_config:
-                  capacity: 10000
-                  max_samples_per_send: 1000
-                  batch_send_deadline: 5s
-                  min_backoff: 1s
-                  max_backoff: 10s
-                
-                # Configure disk buffering
-                wal:
-                  enabled: true
-                  truncate_frequency: 2h
-                  min_keepalive_time: 5m
-                  max_keepalive_time: 8h
-                  directory: "${cfg.bufferConfig.directory}" 
-                  max_size: ${toString (cfg.bufferConfig.maxSize * 1024 * 1024)} # Convert MB to bytes
-                  
-            # Configure node_exporter
-            integrations:
-              node_exporter:
-                enabled: true
-                include_exporter_metrics: true
-                
-                # Enable battery collector and other useful collectors for laptops
-                enable_collectors:
-                  - "battery"
-                  - "uname"
-                  - "meminfo"
-                  - "cpu"
-                  - "diskstats"
-                  - "filesystem"
-                  - "loadavg"
-                  - "netdev"
-                  - "thermal_zone"
-                  - "powersupply"  # For power supply information including batteries
-                  ${lib.optionalString cfg.textfileCollector.enable ''
-                    - "textfile"
-                  ''}
-                
-                # Battery specific configuration
-                battery:
-                  enable_extended_metrics: true
-                
-                ${lib.optionalString cfg.textfileCollector.enable ''
-                  textfile:
-                    directory: "${cfg.textfileCollector.directory}"
-                ''}
-                
-                # Add extra arguments
-                extra_args: ${builtins.toJSON cfg.extraNodeExporterArgs}
-                
-            ${optionalString (cfg.scrapeConfigs != [ ]) ''
-              # Additional scrape configurations
-              scrape_configs:
-                ${concatStringsSep "\n" (map formatScrapeConfig cfg.scrapeConfigs)}
-            ''}
+       prometheus.scrape "default" {
+         scrape_interval = "15s"
+         external_labels = {
+      	   host = ${config.networking.hostName}
+         }
+         target {
+           # Example for a static target
+           job = "my_exporter"
+           targets = ["localhost:9091"]
+           labels = {
+             service = "my-custom-service"
+           }
+           metrics_path = "/metrics"
+           scrape_interval = "15s"
+           scrape_timeout = "10s"
+         }
+         # Add more target blocks as needed
+       }
+
+       prometheus.remote_write "grafanacloud" {
+         endpoint {
+           url = ${cfg.grafanaCloud.url}
+           basic_auth {
+             username = ${cfg.grafanaCloud.username}
+             password = ${config.sops.placeholder.grafana_api_token}
+           }
+         }
+         wal {
+           enabled = true
+           truncate_frequency = "2h"
+           min_keepalive_time = "5m"
+           max_keepalive_time = "8h"
+           directory = "/var/lib/grafana-alloy/buffer"
+           max_size = 1073741824 # Example, 1024MB in bytes
+         }
+       }
+
+       integration.node_exporter "default" {
+         enabled = true
+         include_exporter_metrics = true
+         enable_collectors = [
+           "battery",
+           "uname",
+           "meminfo",
+           "cpu",
+           "diskstats",
+           "filesystem",
+           "loadavg",
+           "netdev",
+           "thermal_zone",
+           "powersupply"
+           # Add "textfile" if enabled
+         ]
+
+         battery {
+           enable_extended_metrics = true
+         }
+
+         # Only include this if textfile collector is enabled
+         textfile {
+           directory = "/var/lib/grafana-alloy/textfile"
+         }
+
+         extra_args = [
+           # "--collector.systemd"
+         ]
+       }
     '';
 
     # Create a systemd timer to periodically collect battery metrics if necessary
