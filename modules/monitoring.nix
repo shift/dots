@@ -170,6 +170,7 @@ in
     };
 
     # Configure Grafana Alloy
+    sops.templates."grafana-alloy/config.yaml".owner = "nobody";
     sops.templates."grafana-alloy/config.yaml".content = ''
       server:
         log_level: info
