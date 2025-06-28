@@ -249,7 +249,6 @@ let
           # This might be a path or a symlink to the actual wallpaper
           user_wallpaper=$(readlink -f "$home_dir/.config/stylix/image")
           if [[ -f "$user_wallpaper" ]]; then
-            echo "Found wallpaper for user $username: $user_wallpaper"
             wallpapers+=("$user_wallpaper")
           fi
         fi

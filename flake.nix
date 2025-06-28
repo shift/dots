@@ -181,6 +181,26 @@
                     curl
                     nixos-anywhere
                     disko
+                    sbctl
+                    util-linux
+                    xxd
+                    file
+                    openssh
+                    # Interactive TUI tools
+                    gum
+                    bun # For interactive guidance
+                    # TPM and hardware detection
+                    tpm2-tools
+                    dmidecode
+                    lshw
+                    # Archive and compression tools
+                    p7zip
+                    # SOPS and secure boot tools
+                    sops
+                    # SOPS and SSH-to-AGE tools for new host setup
+                    sops
+                    ssh-to-age
+                    qrencode # For QR code generation
                   ];
 
                   # SSH for remote access
@@ -192,9 +212,9 @@
                     };
                   };
 
-                  # Temporary root access
+                  # Temporary root access (override any conflicting password settings)
                   users.users.root = {
-                    password = "nixos"; # CHANGE IMMEDIATELY
+                    initialPassword = lib.mkForce "nixos"; # CHANGE IMMEDIATELY
                     openssh.authorizedKeys.keys = [
                       # Add your SSH public key here
                     ];
@@ -203,8 +223,57 @@
                   # Allow passwordless sudo
                   security.sudo.wheelNeedsPassword = false;
 
+                  # Ensure installer scripts are executable
+                  system.activationScripts.makeInstallerScriptsExecutable = ''
+                    if [ -d /installer-scripts ]; then
+                      chmod +x /installer-scripts/*.sh
+                      # Create convenient symlinks in /usr/local/bin
+                      mkdir -p /usr/local/bin
+                      ln -sf /installer-scripts/shulker-autoinstall.sh /usr/local/bin/shulker-install
+                      ln -sf /installer-scripts/detect-setup-mode.sh /usr/local/bin/check-setup-mode
+                      ln -sf /installer-scripts/install-secureboot-keys.sh /usr/local/bin/install-secureboot
+                    fi
+                  '';
+
                   # ISO-specific configuration
                   system.stateVersion = lib.mkForce "25.05";
+
+                  # Create convenient aliases for installer scripts
+                  environment.shellAliases = {
+                    shulker-install = "/installer-scripts/shulker-autoinstall.sh";
+                    shulker-status = "/installer-scripts/shulker-autoinstall.sh status";
+                    setup-sops = "/installer-scripts/shulker-autoinstall.sh setup-sops";
+                    install-secureboot = "/installer-scripts/install-secureboot-keys.sh";
+                    check-setup-mode = "/installer-scripts/detect-setup-mode.sh";
+                  };
+
+                  # Add installer message to motd
+                  users.motd = ''
+                    Welcome to Shulker Installer!
+
+                    Quick Commands:
+                      shulker-install     - Full automated installation
+                      shulker-status      - Check system status
+                      setup-sops          - Set up SOPS for new host (with QR code)
+                      install-secureboot  - Install secure boot keys
+                      check-setup-mode    - Check if in setup mode
+
+                    For help: shulker-install --help
+                  '';
+
+                  # Optional auto-installer service (disabled by default)
+                  systemd.services.shulker-auto-installer = {
+                    description = "Shulker Auto Installer Service";
+                    wantedBy = [ ]; # Disabled by default - enable with: systemctl enable shulker-auto-installer
+                    after = [ "network-online.target" ];
+                    wants = [ "network-online.target" ];
+                    serviceConfig = {
+                      Type = "oneshot";
+                      ExecStart = "/installer-scripts/shulker-autoinstall.sh install";
+                      StandardOutput = "journal+console";
+                      StandardError = "journal+console";
+                    };
+                  };
 
                   # Explicitly configure the ISO image
                   isoImage = {
@@ -219,11 +288,11 @@
                         target = "/repo";
                       }
                       {
-                        source = /etc/ssh;
-                        target = "/ssh_keys";
+                        source = ./installer-scripts;
+                        target = "/installer-scripts";
                       }
                       {
-                        source = /etc/secureboot;
+                        source = ./secrets/secureboot;
                         target = "/secureboot";
                       }
                     ];
@@ -261,6 +330,7 @@
       perSystem =
         {
           pkgs,
+          system,
           ...
         }:
         {
@@ -276,6 +346,80 @@
           # };
           #
           # packages.default = self'.packages.activate;
+
+          packages = {
+            # Signed installer ISO with Secure Boot keys
+            shulkerbox-installer-signed =
+              let
+                baseIso = self.nixosConfigurations.shulkerbox-installer.config.system.build.isoImage;
+                securebootKeys = ./secrets/secureboot/x1y;
+              in
+              pkgs.runCommand "shulkerbox-installer-signed-1.0.0"
+                {
+                  buildInputs = with pkgs; [
+                    sbsigntool
+                    sbctl
+                    coreutils
+                    util-linux
+                    findutils
+                  ];
+                  meta = with pkgs.lib; {
+                    description = "Shulkerbox installer ISO with Secure Boot signing";
+                    license = licenses.mit;
+                    platforms = platforms.linux;
+                  };
+                }
+                ''
+                  echo "Preparing ISO for signing..."
+
+                  # Find the ISO file in the base build - look for actual files, not directories
+                  isoFile=$(find ${baseIso} -name "*.iso" -type f | head -1)
+                  if [ -z "$isoFile" ]; then
+                    echo "Error: No ISO file found in base build"
+                    echo "Contents of ${baseIso}:"
+                    find ${baseIso} -type f | head -10
+                    exit 1
+                  fi
+
+                  echo "Found ISO: $isoFile"
+                  cp "$isoFile" ./installer.iso
+
+                  # Check if we have secureboot keys available
+                  if [ -d "${securebootKeys}" ] && [ -f "${securebootKeys}/db/db.key" ] && [ -f "${securebootKeys}/db/db.pem" ]; then
+                    echo "Secureboot keys found, signing ISO..."
+                    
+                    # Sign the ISO with the db key
+                    sbsign --key "${securebootKeys}/db/db.key" --cert "${securebootKeys}/db/db.pem" --output installer-signed.iso installer.iso
+                    
+                    if [ $? -eq 0 ]; then
+                      echo "ISO signed successfully"
+                    else
+                      echo "Signing failed, creating unsigned copy"
+                      cp installer.iso installer-signed.iso
+                    fi
+                  else
+                    echo "No secureboot keys found, creating unsigned copy"
+                    cp installer.iso installer-signed.iso
+                  fi
+
+                  # Install outputs
+                  mkdir -p $out
+                  cp installer-signed.iso $out/
+
+                  # Create a convenient symlink with a predictable name
+                  ln -s installer-signed.iso $out/shulkerbox-installer-signed.iso
+
+                  # Create metadata
+                  cat > $out/build-info.txt << EOF
+                  Shulkerbox Installer ISO
+                  System: ${system}
+                  Base ISO: $(basename "$isoFile")
+                  Signed: $([ -f "${securebootKeys}/db/db.key" ] && echo "Yes" || echo "No")
+                  Build: $(date)
+                  EOF
+                '';
+          };
+
           devShells.default = pkgs.mkShell {
             buildInputs = [
               pkgs.git
