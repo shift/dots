@@ -158,7 +158,7 @@ in
       after = [ "network.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.grafana-alloy}/bin/alloy run /run/secrets/rendered/grafana-alloy";
+        ExecStart = "${pkgs.grafana-alloy}/bin/alloy run /run/secrets/rendered/grafana-alloy --storage.path=${cfg.bufferConfig.directory}";
         Restart = "always";
         User = "nobody";
         Group = "nobody";
