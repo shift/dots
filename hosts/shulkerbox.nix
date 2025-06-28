@@ -52,6 +52,7 @@
       "rd.luks.options=tpm2-measure-pcr=yes"
       "udev.log_priority=3"
       "resume_offset=533760"
+      "bgrt_disable"
     ];
     resumeDevice = "/dev/mapper/crypted";
 
