@@ -105,8 +105,8 @@ in
       };
 
       password = mkOption {
-        type = types.str;
-        description = "Grafana Cloud API key";
+        type = types.attrs;
+        description = "Grafana Cloud API sops-nix secret";
       };
     };
 
@@ -158,7 +158,9 @@ in
       after = [ "network.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.grafana-alloy}/bin/alloy --config.file=/etc/grafana-alloy/config.yaml";
+        ExecStart = "${pkgs.grafana-alloy}/bin/alloy --config.file=${
+          config.sops.templates."grafana-alloy/config.yaml".path
+        }";
         Restart = "always";
         User = "nobody";
         Group = "nobody";
@@ -170,7 +172,7 @@ in
     };
 
     # Configure Grafana Alloy
-    environment.etc."grafana-alloy/config.yaml".text = ''
+    sops.templates."grafana-alloy/config.yaml".content = ''
       server:
         log_level: info
 
@@ -186,7 +188,7 @@ in
               - url: ${cfg.grafanaCloud.url}
                 basic_auth:
                   username: ${cfg.grafanaCloud.username}
-                  password: ${cfg.grafanaCloud.password}
+                  password: ${config.sops.placeholder.grafana_api_token}
                 queue_config:
                   capacity: 10000
                   max_samples_per_send: 1000

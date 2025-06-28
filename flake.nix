@@ -357,7 +357,8 @@
               pkgs.runCommand "shulkerbox-installer-signed-1.0.0"
                 {
                   buildInputs = with pkgs; [
-                    sbsigntools
+                    sbsigntool
+                    sbctl
                     coreutils
                     util-linux
                     findutils

@@ -18,6 +18,7 @@
 
   sops.defaultSopsFile = ../secrets/common.yaml;
   sops.defaultSopsFormat = "yaml";
+  sops.secrets.grafana_api_token = { };
   sops.secrets."shift_hashed_passwd" = {
     neededForUsers = true;
   };
@@ -473,9 +474,9 @@
   services.grafana-alloy-laptop = {
     enable = true;
     grafanaCloud = {
-      url = "https://prometheus-prod-01-eu-west-0.grafana.net/api/prom/push";
-      username = "12345";
-      password = "your-api-key-here";
+      url = "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push";
+      username = "1842292";
+      password = config.sops.secrets.grafana_api_token;
     };
     textfileCollector.enable = true;
   };
