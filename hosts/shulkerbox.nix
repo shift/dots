@@ -244,7 +244,7 @@
     };
 
     tailscale = {
-      enable = false;
+      enable = true;
       useRoutingFeatures = "both";
       extraUpFlags = [
         "--ssh"
