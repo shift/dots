@@ -15,6 +15,8 @@
     SYSTEMD_BYPASS_HIBERNATION_MEMORY_CHECK = "1";
   };
 
+  services.system-notifier.enable = true;
+
   networking.firewall = {
     enable = true;
     allowedTCPPorts = [ 22 ];
@@ -33,6 +35,7 @@
     gnome-calculator
     gnome-calendar
     gnome-screenshot
+    firefox
     flatpak
     xdg-desktop-portal
     xdg-desktop-portal-gtk

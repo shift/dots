@@ -56,21 +56,6 @@ let
   };
 
   # Formatted YAML output for a single scrape config
-  formatScrapeConfig = cfg: ''
-    - job_name: ${cfg.job_name}
-      static_configs:
-        - targets: ${builtins.toJSON cfg.targets}
-          ${optionalString (cfg.labels != { }) "labels:"}
-          ${concatStringsSep "\n" (
-            mapAttrsToList (name: value: "            ${name}: ${value}") cfg.labels
-          )}
-      metrics_path: ${cfg.metrics_path}
-      scrape_interval: ${cfg.scrape_interval}
-      scrape_timeout: ${cfg.scrape_timeout}
-      ${concatStringsSep "\n" (
-        mapAttrsToList (name: value: "      ${name}: ${builtins.toJSON value}") cfg.extra_config
-      )}
-  '';
 
 in
 {
