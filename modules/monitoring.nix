@@ -137,7 +137,6 @@ in
     ];
     environment.etc.alloy-config = {
       source = config.sops.templates."grafana-alloy/config.alloy".path;
-      target = "/etc/grafana-alloy/config.alloy";
       user = "nobody";
     };
 
@@ -162,77 +161,111 @@ in
     # Configure Grafana Alloy
     sops.templates."grafana-alloy/config.alloy".owner = "nobody";
     sops.templates."grafana-alloy/config.alloy".content = ''
-       server {
-         log_level = "info"
-       }
 
-       prometheus.scrape "default" {
-         scrape_interval = "15s"
-         external_labels = {
-      	   host = ${config.networking.hostName}
-         }
-         target {
-           # Example for a static target
-           job = "my_exporter"
-           targets = ["localhost:9091"]
-           labels = {
-             service = "my-custom-service"
-           }
-           metrics_path = "/metrics"
-           scrape_interval = "15s"
-           scrape_timeout = "10s"
-         }
-         # Add more target blocks as needed
-       }
+          prometheus.exporter.self "alloy_check" { }
 
-       prometheus.remote_write "grafanacloud" {
-         endpoint {
-           url = ${cfg.grafanaCloud.url}
-           basic_auth {
-             username = ${cfg.grafanaCloud.username}
-             password = ${config.sops.placeholder.grafana_api_token}
-           }
-         }
-         wal {
-           enabled = true
-           truncate_frequency = "2h"
-           min_keepalive_time = "5m"
-           max_keepalive_time = "8h"
-           directory = "/var/lib/grafana-alloy/buffer"
-           max_size = 1073741824 # Example, 1024MB in bytes
-         }
-       }
+          discovery.relabel "alloy_check" {
+            targets = prometheus.exporter.self.alloy_check.targets
 
-       integration.node_exporter "default" {
-         enabled = true
-         include_exporter_metrics = true
-         enable_collectors = [
-           "battery",
-           "uname",
-           "meminfo",
-           "cpu",
-           "diskstats",
-           "filesystem",
-           "loadavg",
-           "netdev",
-           "thermal_zone",
-           "powersupply"
-           # Add "textfile" if enabled
-         ]
+            rule {
+              target_label = "instance"
+              replacement  = constants.hostname
+            }
 
-         battery {
-           enable_extended_metrics = true
-         }
+            rule {
+              target_label = "alloy_hostname"
+              replacement  = constants.hostname
+            }
 
-         # Only include this if textfile collector is enabled
-         textfile {
-           directory = "/var/lib/grafana-alloy/textfile"
-         }
+            rule {
+              target_label = "job"
+              replacement  = "integrations/alloy-check"
+            }
+          }
 
-         extra_args = [
-           # "--collector.systemd"
-         ]
-       }
+          prometheus.scrape "alloy_check" {
+            targets    = discovery.relabel.alloy_check.output
+            forward_to = [prometheus.relabel.alloy_check.receiver]
+
+            scrape_interval = "60s"
+          }
+
+          prometheus.relabel "alloy_check" {
+            forward_to = [prometheus.remote_write.metrics_service.receiver]
+
+            rule {
+              source_labels = ["__name__"]
+              regex         = "(prometheus_target_sync_length_seconds_sum|prometheus_target_scrapes_.*|prometheus_target_interval.*|prometheus_sd_discovered_targets|alloy_build.*|prometheus_remote_write_wal_samples_appended_total|process_start_time_seconds)"
+              action        = "keep"
+            }
+          }
+
+          prometheus.remote_write "metrics_service" {
+            endpoint {
+              url = "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push"
+
+              basic_auth {
+                username = ${cfg.grafanaCloud.username}
+                password = ${config.sops.placeholder.grafana_api_token}
+              }
+            }
+          }
+
+          loki.source.journal "journal" {
+             forward_to    = [loki.write.grafana_cloud_loki.receiver]
+          }
+          loki.write "grafana_cloud_loki" {
+            endpoint {
+             url = ${cfg.grafanaCloud.url}
+
+              basic_auth {
+                username = ${cfg.grafanaCloud.username}
+                password = ${config.sops.placeholder.grafana_api_token}
+              }
+            }
+          }
+              discovery.relabel "integrations_node_exporter" {
+                targets = prometheus.exporter.unix.integrations_node_exporter.targets
+
+                rule {
+                  target_label = "job"
+                  replacement = "integrations/node_exporter"
+                }
+              }
+
+              prometheus.exporter.unix "integrations_node_exporter" {
+                disable_collectors = ["ipvs", "infiniband", "xfs", "zfs", "nfs", "nfsd", "tapestats"]
+      	      enable_collectors = ["logind", "network_route", "systemd", "wifi"]
+
+                filesystem {
+                  fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+                  mount_points_exclude = "^/(dev|proc|run/credentials/.+|sys|var/lib/docker/.+)($|/)"
+                  mount_timeout        = "5s"
+                }
+
+                netclass {
+                  ignored_devices = "^(veth.*|cali.*|[a-f0-9]{15})$"
+                }
+
+                netdev {
+                  device_exclude = "^(veth.*|cali.*|[a-f0-9]{15})$"
+                }
+              }
+
+              prometheus.scrape "integrations_node_exporter" {
+                targets    = discovery.relabel.integrations_node_exporter.output
+                forward_to = [prometheus.relabel.integrations_node_exporter.receiver]
+              }
+
+              prometheus.scrape "geoclue" {
+                targets    = "127.0.0.1:9090"
+                forward_to = [prometheus.relabel.integrations_node_exporter.receiver]
+              }
+
+              prometheus.relabel "integrations_node_exporter" {
+                forward_to = [prometheus.remote_write.metrics_service.receiver]
+
+              }
     '';
 
     # Create a systemd timer to periodically collect battery metrics if necessary
