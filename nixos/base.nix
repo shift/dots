@@ -22,6 +22,13 @@
     allowedTCPPorts = [ 22 ];
   };
 
+  services.geoclue-prometheus-exporter = {
+    enable = true;
+    bind = "127.0.0.1";
+    port = 9090;
+    openFirewall = false;
+  };
+
   programs.dconf.enable = true;
   programs.light.enable = true;
 

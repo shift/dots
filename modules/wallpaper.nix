@@ -55,7 +55,7 @@ let
 
                     resized_slice = source_slice.resize((dest_width, height),
                                                         Image.Resampling.LANCZOS)
- 
+
                     # Calculate the position to paste the slice on the canvas.
                     paste_x_position = i * slice_width
 
