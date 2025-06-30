@@ -215,7 +215,7 @@ in
              }
              loki.write "grafana_cloud_loki" {
       	 endpoint {
-      	   url = "${cfg.grafanaCloud.url}"
+      	   url = "logs-prod-012.grafana.net/loki/api/v1/push"
 
       	   basic_auth {
       	     username = ${cfg.grafanaCloud.username}
