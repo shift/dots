@@ -272,7 +272,6 @@ in
       	     forward_to = [prometheus.remote_write.metrics_service.receiver]
 
       	   }
-           }
     '';
 
     # Create a systemd timer to periodically collect battery metrics if necessary
