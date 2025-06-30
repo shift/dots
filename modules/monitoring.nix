@@ -134,6 +134,7 @@ in
       (mkIf cfg.textfileCollector.enable "d ${cfg.textfileCollector.directory} 0755 nobody nobody - -")
       # Create buffer directory
       "d ${cfg.bufferConfig.directory} 0755 nobody nobody - -"
+      "d ${cfg.bufferConfig.directory}/loki.source.journal.journal 0755 nobody nobody - -"
     ];
     environment.etc."grafana-alloy/config.alloy" = {
       source = config.sops.templates."grafana-alloy/config.alloy".path;
