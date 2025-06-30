@@ -107,8 +107,8 @@
                 nixpkgs.config.allowUnfree = true;
                 stylix.enable = true;
                 stylix.autoEnable = true;
-                #stylix.image = ./assets/wallpaper.jpg;
-                #stylix.targets.plymouth.logo = ./assets/wallpaper.jpg;
+                stylix.image = ./assets/wallpaper.jpg;
+                stylix.targets.plymouth.logo = ./assets/wallpaper.jpg;
                 stylix.targets.plymouth.logoAnimated = false;
                 stylix.polarity = "dark";
 
@@ -128,8 +128,8 @@
               {
                 dots.wallpaper = {
                   enable = true;
-                  width = 2560; # Configure for your screen
-                  height = 1440; # Configure for your screen
+                  width = 1366; # Configure for your screen
+                  height = 768; # Configure for your screen
                   flakeRootDefault = ./assets/wallpaper.jpg;
                 };
               }

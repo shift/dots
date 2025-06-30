@@ -56,21 +56,6 @@ let
   };
 
   # Formatted YAML output for a single scrape config
-  formatScrapeConfig = cfg: ''
-    - job_name: ${cfg.job_name}
-      static_configs:
-        - targets: ${builtins.toJSON cfg.targets}
-          ${optionalString (cfg.labels != { }) "labels:"}
-          ${concatStringsSep "\n" (
-            mapAttrsToList (name: value: "            ${name}: ${value}") cfg.labels
-          )}
-      metrics_path: ${cfg.metrics_path}
-      scrape_interval: ${cfg.scrape_interval}
-      scrape_timeout: ${cfg.scrape_timeout}
-      ${concatStringsSep "\n" (
-        mapAttrsToList (name: value: "      ${name}: ${builtins.toJSON value}") cfg.extra_config
-      )}
-  '';
 
 in
 {
@@ -150,6 +135,11 @@ in
       # Create buffer directory
       "d ${cfg.bufferConfig.directory} 0755 nobody nobody - -"
     ];
+    environment.etc.alloy-config = {
+      source = config.sops.templates."grafana-alloy/config.alloy".path;
+      target = "/etc/grafana-alloy/config.alloy";
+      user = "nobody";
+    };
 
     # Set up Grafana Alloy service
     systemd.services.grafana-alloy = {
@@ -158,7 +148,7 @@ in
       after = [ "network.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.grafana-alloy}/bin/alloy run /run/secrets/rendered/grafana-alloy --storage.path=${cfg.bufferConfig.directory}";
+        ExecStart = "${pkgs.grafana-alloy}/bin/alloy run /etc/grafana-alloy --storage.path=${cfg.bufferConfig.directory}";
         Restart = "always";
         User = "nobody";
         Group = "nobody";
@@ -170,8 +160,8 @@ in
     };
 
     # Configure Grafana Alloy
-    sops.templates."grafana-alloy/config.yaml".owner = "nobody";
-    sops.templates."grafana-alloy/config.yaml".content = ''
+    sops.templates."grafana-alloy/config.alloy".owner = "nobody";
+    sops.templates."grafana-alloy/config.alloy".content = ''
        server {
          log_level = "info"
        }

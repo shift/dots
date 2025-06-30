@@ -11,227 +11,84 @@ let
   cfg = config.dots.wallpaper;
 
   # 1. Define the pie-image-combiner script directly within the module
-  pieImageCombinerApp = pkgs.writeShellApplication {
-    name = "pie-image-combiner";
-    runtimeInputs = [
-      pkgs.imagemagick
-      pkgs.file
-    ]; # Added file for mime type checks
-    text = ''
-      #!/usr/bin/env bash
+  pieImageCombinerApp =
+    pkgs.writers.writePython3 "pie_wallpaper_generator.py"
+      {
+        libraries = [ pkgs.python3Packages.pillow ];
+      }
+      ''
+        import sys
+        from PIL import Image
 
-      # This script combines multiple images into a single "pie chart" image.
-      # Each image will occupy an equal angular slice of a circular output.
-      # The canvas size is configurable, defaulting to 1024x768.
 
-      set -euo pipefail
+        def create_vertical_strip_wallpaper(output_path, resolution, wallpaper_paths):
+            width, height = resolution
+            num_users = len(wallpaper_paths)
+            if num_users == 0:
+                print("No wallpapers provided, creating a black image.")
+                Image.new('RGB', (width, height), 'black').save(output_path)
+                return
 
-      # Default canvas dimensions
-      CANVAS_WIDTH=1024
-      CANVAS_HEIGHT=768
+            # Create a new blank canvas to paste the slices onto.
+            canvas = Image.new('RGB', (width, height))
 
-      # --- Argument Parsing ---
-      # Parse command line options for width and height before processing image paths.
-      # Positional arguments (image paths and output file) are collected into 'args'.
-      args=()
-      while [[ $# -gt 0 ]]; do
-          case "$1" in
-              --width)
-                  if [[ -n "$2" && "$2" =~ ^[0-9]+$ ]]; then
-                      CANVAS_WIDTH="$2"
-                      shift 2
-                  else
-                      echo "Error: --width requires a numeric value." >&2
-                      exit 1
-                  fi
-                  ;;
-              --height)
-                  if [[ -n "$2" && "$2" =~ ^[0-9]+$ ]]; then
-                      CANVAS_HEIGHT="$2"
-                      shift 2
-                  else
-                      echo "Error: --height requires a numeric value." >&2
-                      exit 1
-                  fi
-                  ;;
-              --) # End of options marker
-                  shift
-                  args+=("$@") # Add remaining arguments and break
-                  break
-                  ;;
-              -*) # Unknown option
-                  echo "Error: Unknown option: $1" >&2
-                  exit 1
-                  ;;
-              *) # Positional arguments (image paths or output file)
-                  args+=("$1")
-                  shift
-                  ;;
-          esac
-      done
-      set -- "''${args[@]}" # Restore positional parameters for further processing
+            # Calculate the width of each vertical slice.
+            slice_width = width // num_users
 
-      # Check for minimum arguments: at least one input image and one output file
-      if [[ "$#" -lt 2 ]]; then
-          echo "Usage: $(basename "$0") [--width <pixels>] [--height <pixels>] <image1.jpg> [image2.png ...] <output.png>"
-          echo ""
-          echo "  --width   Set the canvas width (default: ''${CANVAS_WIDTH})"
-          echo "  --height  Set the canvas height (default: ''${CANVAS_HEIGHT})"
-          echo ""
-          echo "Combines input images into a circular composite, where each image"
-          echo "occupies an equal angular slice like a pie chart."
-          echo "The last argument after options is assumed to be the output file name."
-          exit 1
-      fi
+            for i, path in enumerate(wallpaper_paths):
+                print(f"Processing slice {i+1}/{num_users} from: {path}")
+                try:
+                    # Open the user's wallpaper.
+                    user_img = Image.open(path).convert('RGB')
 
-      # Fix: Use more robust array handling to prevent ShellCheck warnings
-      output_file="''${!#}" # The last argument is the output file name
+                    source_slice_width = user_img.width // num_users
+                    left = i * source_slice_width
+                    top = 0
+                    right = (i + 1) * source_slice_width
+                    bottom = user_img.height
+                    # Crop the slice from the source image.
+                    source_slice = user_img.crop((left, top, right, bottom))
 
-      # Fix: Use declare and a loop instead of array slice syntax
-      declare -a input_images
-      for ((i=1; i<=$#-1; i++)); do
-        input_images+=("''${!i}")
-      done
+                    dest_width = slice_width
+                    if i == num_users - 1:
+                        dest_width = width - (i * slice_width)
 
-      num_images="''${#input_images[@]}"
+                    resized_slice = source_slice.resize((dest_width, height),
+                                                        Image.Resampling.LANCZOS)
+ 
+                    # Calculate the position to paste the slice on the canvas.
+                    paste_x_position = i * slice_width
 
-      if [[ "''${num_images}" -eq 0 ]]; then
-          echo "Error: No input images provided before the output file name."
-          exit 1
-      fi
+                    # Paste the final slice onto the main canvas.
+                    canvas.paste(resized_slice, (paste_x_position, 0))
 
-      # Validate that all input files exist and are valid images
-      for img in "''${input_images[@]}"; do
-          if [[ ! -f "''${img}" ]]; then
-              echo "Error: Input file does not exist: ''${img}" >&2
-              exit 1
-          fi
-          
-          # Check if file is a valid image (basic check)
-          mime_type=$(file --mime-type -b "''${img}")
-          if [[ ! "''${mime_type}" =~ ^image/ ]]; then
-              echo "Error: Not a valid image file: ''${img} (''${mime_type})" >&2
-              exit 1
-          fi
-      done
+                except Exception as e:
+                    print(f"Error processing {path}: {e}", file=sys.stderr)
 
-      # --- Calculate dimensions for the inscribed circle ---
-      # The circular pie chart will fit within the smaller of the two canvas dimensions.
-      MIN_DIM=$((CANVAS_WIDTH < CANVAS_HEIGHT ? CANVAS_WIDTH : CANVAS_HEIGHT))
-      RADIUS=$((MIN_DIM / 2))
-      CIRCLE_CENTER_X=$((CANVAS_WIDTH / 2))
-      CIRCLE_CENTER_Y=$((CANVAS_HEIGHT / 2))
-      # Bounding box for drawing the circle/arcs.
-      # This defines a square within which the circle is inscribed.
-      CIRCLE_BOUNDING_BOX_X1=$((CIRCLE_CENTER_X - RADIUS))
-      CIRCLE_BOUNDING_BOX_Y1=$((CIRCLE_CENTER_Y - RADIUS))
-      CIRCLE_BOUNDING_BOX_X2=$((CIRCLE_CENTER_X + RADIUS))
-      CIRCLE_BOUNDING_BOX_Y2=$((CIRCLE_CENTER_Y + RADIUS))
+            canvas.save(output_path)
+            print(f"Wallpaper successfully saved to {output_path}")
 
-      # Create a temporary directory for intermediate files
-      tmp_dir="$(mktemp -d)"
-      trap 'rm -rf "''${tmp_dir}"' EXIT # Clean up on script exit
+            canvas.save(output_path)
+            print(f"Wallpaper successfully saved to {output_path}")
 
-      current_angle=0
-      # Calculate the angle for each slice. If only one image, it takes the full 360 degrees.
-      if [[ "''${num_images}" -gt 0 ]]; then
-          angle_per_slice=$((360 / num_images))
-      else
-          angle_per_slice=360
-      fi
 
-      # Array to hold paths to the final masked image slices
-      masked_slice_files=()
+        if __name__ == "__main__":
+            output_arg = sys.argv[1]
+            resolution_arg = tuple(map(int, sys.argv[2].split('x')))
+            paths_arg = sys.argv[3:]
+            create_vertical_strip_wallpaper(output_arg, resolution_arg, paths_arg)
+      '';
 
-      # Process each input image
-      for i in "''${!input_images[@]}"; do
-          img_path="''${input_images[$i]}"
-          slice_start_angle="''${current_angle}"
-          slice_end_angle=$((current_angle + angle_per_slice))
-
-          # For the last slice, ensure the end angle is exactly 360 to close the circle,
-          # compensating for potential integer division inaccuracies.
-          if [[ "''${i}" -eq $((num_images - 1)) ]]; then
-              slice_end_angle=360
-          fi
-          
-          # 1. Resize and crop the image to fit the rectangular canvas.
-          #    '-resize "''${CANVAS_WIDTH}x''${CANVAS_HEIGHT}^"' scales to fill, maintaining aspect ratio.
-          #    '-gravity Center -crop ...' then crops to the exact canvas dimensions from the center.
-          resized_img="''${tmp_dir}/img_''${i}_resized.png"
-          magick "''${img_path}" \
-              -resize "''${CANVAS_WIDTH}x''${CANVAS_HEIGHT}^" \
-              -gravity Center -crop "''${CANVAS_WIDTH}x''${CANVAS_HEIGHT}+0+0" +repage \
-              -format png "''${resized_img}"
-
-          # 2. Create a full circular mask, centered within the canvas, limited by MIN_DIM.
-          #    'circle center_x,center_y radius_x,radius_y' draws a circle.
-          #    'radius_x,radius_y' is a point on the circumference from the center.
-          circular_mask="''${tmp_dir}/circular_mask_''${i}.png"
-          magick -size "''${CANVAS_WIDTH}x''${CANVAS_HEIGHT}" xc:black \
-              -fill white \
-              -draw "circle ''${CIRCLE_CENTER_X},''${CIRCLE_CENTER_Y} ''${CIRCLE_CENTER_X},''${CIRCLE_CENTER_Y-RADIUS}" \
-              "''${circular_mask}"
-
-          # 3. Apply the circular mask to the resized image.
-          #    '-alpha set -channel A -evaluate set 0% +channel' properly initializes alpha channel.
-          #    '-compose DstIn -composite' effectively "cuts out" the circular shape from the image.
-          circular_cropped_img="''${tmp_dir}/img_''${i}_circular_cropped.png"
-          magick "''${resized_img}" "''${circular_mask}" \
-              -alpha set -channel A -evaluate set 0% +channel \
-              -compose DstIn -composite "''${circular_cropped_img}"
-
-          # 4. Create the specific pie slice mask for the current image.
-          #    'arc x1,y1 x2,y2 start_angle end_angle' draws an arc within a bounding box.
-          #    The bounding box here is for the inscribed circle.
-          slice_mask="''${tmp_dir}/slice_mask_''${i}.png"
-          magick -size "''${CANVAS_WIDTH}x''${CANVAS_HEIGHT}" xc:transparent \
-              -fill white \
-              -draw "arc ''${CIRCLE_BOUNDING_BOX_X1},''${CIRCLE_BOUNDING_BOX_Y1} ''${CIRCLE_BOUNDING_BOX_X2},''${CIRCLE_BOUNDING_BOX_Y2} ''${slice_start_angle} ''${slice_end_angle}" \
-              "''${slice_mask}"
-
-          # 5. Apply the pie slice mask to the circular-cropped image.
-          #    This step cuts the final pie slice shape from the circular image.
-          masked_slice="''${tmp_dir}/masked_slice_''${i}.png"
-          magick "''${circular_cropped_img}" "''${slice_mask}" \
-              -alpha set -channel A -evaluate set 0% +channel \
-              -compose DstIn -composite "''${masked_slice}"
-
-          masked_slice_files+=("''${masked_slice}") # Add this slice to an array for final combination
-
-          current_angle="''${slice_end_angle}" # Update the starting angle for the next slice
-      done
-
-      # 6. Assemble all the masked slices into a final image.
-      #    Start with a transparent background of the defined CANVAS_WIDTH x CANVAS_HEIGHT.
-      final_composite_command="magick -size ''${CANVAS_WIDTH}x''${CANVAS_HEIGHT} xc:transparent"
-
-      for slice_file in "''${masked_slice_files[@]}"; do
-          final_composite_command+=" \"''${slice_file}\" -composite"
-      done
-      final_composite_command+=" \"''${output_file}\""
-
-      echo "Executing: ''${final_composite_command}"
-      eval "''${final_composite_command}" # Use eval to execute the dynamically built command string
-
-      echo "Composite image saved to: ''${output_file}"
-    '';
-  };
-
-  # Script that runs during activation to collect and generate the wallpaper
   wallpaperGeneratorScript = pkgs.writeShellScript "generate-wallpaper" ''
+
     # This script collects user wallpapers at activation time and generates the composite wallpaper
 
     set -euo pipefail
 
     # Set up variables
-    WALLPAPER_DIR="/etc/nixos/wallpaper"
-    OUTPUT_PATH="$WALLPAPER_DIR/combined-wallpaper.png"
+    OUTPUT_PATH="./system-wallpaper.png"
     DEFAULT_WALLPAPER="${toString cfg.defaultWallpaper}"
     FLAKE_ROOT_DEFAULT="${toString cfg.flakeRootDefault}"
-
-    # Create wallpaper directory if it doesn't exist
-    mkdir -p "$WALLPAPER_DIR"
 
     # Function to find wallpapers in user HOME directories
     collect_user_wallpapers() {
@@ -276,13 +133,12 @@ let
     # Collect wallpapers - Fix: Use read to handle paths with spaces
     mapfile -t wallpapers < <(collect_user_wallpapers)
 
-    # Generate the pie chart wallpaper
     echo "Generating combined wallpaper with ${toString cfg.width}x${toString cfg.height} dimensions"
-    ${pieImageCombinerApp}/bin/pie-image-combiner \
-      --width ${toString cfg.width} \
-      --height ${toString cfg.height} \
-      "''${wallpapers[@]}" \
-      "$OUTPUT_PATH"
+
+    ${pieImageCombinerApp} \
+      "$OUTPUT_PATH" \
+      "${toString cfg.width}x${toString cfg.height}" \
+      "''${wallpapers[@]}"
       
     # Update stylix to use the new wallpaper
     # We need to create a symlink that matches the expected stylix path pattern
@@ -305,8 +161,9 @@ let
     fi
 
     echo "Wallpaper generation complete!"
-  '';
 
+
+  '';
 in
 {
   # Define module options under the 'dots.wallpaper' path
@@ -331,13 +188,13 @@ in
 
     defaultWallpaper = mkOption {
       type = types.path;
-      default = ../../../assets/wallpaper.jpg;
+      default = /etc/nixos/wallpaper/default.jpg;
       description = "Default wallpaper to use if no input wallpapers are found.";
     };
 
     flakeRootDefault = mkOption {
       type = types.path;
-      default = ../../../assets/wallpaper.jpg;
+      default = /etc/nixos/wallpaper/default.jpg;
       description = "Path to the default wallpaper in your flake root.";
       example = literalExpression "../../../assets/wallpaper.jpg";
     };
@@ -362,17 +219,17 @@ in
     system.activationScripts.generatePieChartWallpaper = ''
       # Run the wallpaper generator script
       echo "Generating pie chart wallpaper from user wallpapers..."
-      ${wallpaperGeneratorScript}
+      ${wallpaperGeneratorScript} 
     '';
 
     # Tell stylix to use our image path
     # This won't create a circular dependency because the path is fixed ahead of time
-    stylix.image = ../assets/wallpaper.jpg;
 
     # Make sure the tools we need are installed
-    environment.systemPackages = with pkgs; [
-      imagemagick
-      file
+    environment.systemPackages = [
+      pkgs.python313
+      pkgs.python313Packages.pillow
+      pkgs.python313Packages.pip
     ];
   };
 }
