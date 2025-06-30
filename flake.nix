@@ -427,7 +427,7 @@
               pkgs.sops
               pkgs.ssh-to-age
               pkgs.nixfmt-rfc-style
-              pkgs.treefmt2
+              pkgs.treefmt
               pkgs.nixos-generators
             ];
           };
