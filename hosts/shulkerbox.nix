@@ -93,21 +93,8 @@
   services.power-profiles-daemon.enable = lib.mkForce false;
   services.fprintd.enable = true;
 
-  nixpkgs.config.packageOverrides = pkgs: {
-    intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
-  };
-  environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; };
 
   hardware = {
-    graphics = {
-      enable = true;
-      extraPackages = with pkgs; [
-        vulkan-intel
-	libvdpau-va-gl
-        vpl-gpu-rt
-        intel-vaapi-driver
-      ];
-    };
     sane.enable = true;
     sane.extraBackends = [
       pkgs.hplipWithPlugin
@@ -288,6 +275,9 @@
 
   location.provider = "geoclue2";
 
+  programs.steam.enable = true;
+  programs.gamescope.enable = true;
+
   programs.regreet = {
     enable = true;
 
@@ -465,13 +455,16 @@
   nixpkgs.config.packageOverrides = pkgs: {
     vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
   };
+  environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; };
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
       intel-compute-runtime
       intel-media-driver
+      intel-media-sdk
       vaapiVdpau
       libvdpau-va-gl
+      vpl-gpu-rt
     ];
   };
 
