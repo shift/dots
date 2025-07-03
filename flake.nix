@@ -11,7 +11,10 @@
     impermanence.url = "github:nix-community/impermanence";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
-    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     lanzaboote = {
       url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -28,16 +31,24 @@
     # Software inputs
     dots-notifier = {
       url = "github:shift/dots-notifier";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     dots-wallpaper = {
       url = "github:shift/dots-wallpaper";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     geoclue-prometheus-exporter = {
       url = "github:shift/geoclue-prometheus-exporter";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixvim.url = "github:nix-community/nixvim/nixos-25.05";
-    nixd.url = "github:nix-community/nixd";
+    nixvim = {
+      url = "github:nix-community/nixvim/nixos-25.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixd = {
+      url = "github:nix-community/nixd";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-minecraft = {
       url = "github:Infinidoge/nix-minecraft";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -127,7 +138,7 @@
                 services.qemuGuest.enable = true;
               }
               ./modules
-	      inputs.dots-wallpaper.nixosModules.default
+              inputs.dots-wallpaper.nixosModules.default
               {
                 dots.wallpaper = {
                   enable = true;
