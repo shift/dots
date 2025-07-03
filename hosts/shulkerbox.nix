@@ -93,7 +93,21 @@
   services.power-profiles-daemon.enable = lib.mkForce false;
   services.fprintd.enable = true;
 
+  nixpkgs.config.packageOverrides = pkgs: {
+    intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
+  };
+  environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; };
+
   hardware = {
+    graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        vulkan-intel
+	libvdpau-va-gl
+        vpl-gpu-rt
+        intel-vaapi-driver
+      ];
+    };
     sane.enable = true;
     sane.extraBackends = [
       pkgs.hplipWithPlugin
