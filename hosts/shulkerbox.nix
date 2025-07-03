@@ -491,6 +491,16 @@
     # registerWithAlloy = false;
   };
 
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+        if (subject.isInGroup("wheel")) {
+          return polkit.Result.YES;
+        } else {
+          return polkit.Result.NO;
+        }
+    });
+  '';
+
   system.stateVersion = "25.05";
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }

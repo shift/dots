@@ -29,6 +29,9 @@
     dots-notifier = {
       url = "github:shift/dots-notifier";
     };
+    dots-wallpaper = {
+      url = "github:shift/dots-wallpaper";
+    };
     geoclue-prometheus-exporter = {
       url = "github:shift/geoclue-prometheus-exporter";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -124,7 +127,7 @@
                 services.qemuGuest.enable = true;
               }
               ./modules
-              ./modules/wallpaper.nix
+	      inputs.dots-wallpaper.nixosModules.default
               {
                 dots.wallpaper = {
                   enable = true;
