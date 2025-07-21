@@ -21,17 +21,16 @@ in
   config = mkIf cfg.enable {
     programs.waybar = {
       enable = true;
-      style =
-        ''
-                  * {
-          	    font-family: "Fira Code", "Font Awesome 6 Free Solid", "Font Awesome 6 Brands", "Symbols Nerd Font";
-                      border: none;
-                      border-radius: 0 0 10px 10px;
-                      font-size: 15px;
-                      min-height: 10px;
-                  }
-        ''
-        + (builtins.readFile ./style.css);
+      style = ''
+                * {
+        	    font-family: "Fira Code", "Font Awesome 6 Free Solid", "Font Awesome 6 Brands", "Symbols Nerd Font";
+                    border: none;
+                    border-radius: 0 0 10px 10px;
+                    font-size: 15px;
+                    min-height: 10px;
+                }
+      ''
+      + (builtins.readFile ./style.css);
 
       settings = {
         "bar-0" = {
