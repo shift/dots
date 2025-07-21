@@ -57,7 +57,6 @@
     # BLING!
     stylix.url = "github:nix-community/stylix/release-25.05";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
-    stylix.inputs.home-manager.follows = "home-manager";
 
     # Devshell
     treefmt-nix.url = "github:numtide/treefmt-nix";

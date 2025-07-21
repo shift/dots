@@ -93,7 +93,6 @@
   services.power-profiles-daemon.enable = lib.mkForce false;
   services.fprintd.enable = true;
 
-
   hardware = {
     sane.enable = true;
     sane.extraBackends = [
@@ -455,7 +454,9 @@
   nixpkgs.config.packageOverrides = pkgs: {
     vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
   };
-  environment.sessionVariables = { LIBVA_DRIVER_NAME = "iHD"; };
+  environment.sessionVariables = {
+    LIBVA_DRIVER_NAME = "iHD";
+  };
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
