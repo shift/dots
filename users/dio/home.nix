@@ -17,7 +17,7 @@
   #### You can edit this below here
 
   programs.firefox.enable = true;
-
+  programs.vscode.enable = true;
   home.packages = with pkgs; [
     reaper # Music editing software
     davinci-resolve # Video editing software
