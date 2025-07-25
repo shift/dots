@@ -19,7 +19,7 @@
   programs.firefox.enable = true;
   programs.vscode = {
     enable = true;
-    usersettings = {
+    userSettings = {
       "window.titleBarStyle" = "custom";
     };
   };
