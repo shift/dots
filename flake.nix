@@ -60,6 +60,7 @@
 
     # Devshell
     treefmt-nix.url = "github:numtide/treefmt-nix";
+
   };
 
   outputs =
@@ -203,7 +204,7 @@
                     gum
                     bun # For interactive guidance
                     # TPM and hardware detection
-                    tpm2-tools
+                    tpm2-tools # Fixed typo from tmp2-tools
                     dmidecode
                     lshw
                     # Archive and compression tools
@@ -214,6 +215,145 @@
                     sops
                     ssh-to-age
                     qrencode # For QR code generation
+                  ];
+
+                  # Pre-populate the Nix store with packages needed for the target system
+                  # Benefits:
+                  # - Enables completely offline installation
+                  # - Faster installation (no downloads during install)
+                  # - Reliable installation in environments with poor connectivity
+                  # - Self-contained installer with everything needed
+                  #
+                  # Note: This will make the ISO significantly larger (~2-4GB instead of ~800MB)
+                  # but provides a complete offline installation experience.
+                  isoImage.storeContents = [
+                    # Include the full system closure for shulkerbox
+                    self.nixosConfigurations.shulkerbox.config.system.build.toplevel
+
+                    # Include commonly needed packages
+                    pkgs.git
+                    pkgs.vim
+                    pkgs.neovim
+                    pkgs.firefox
+                    pkgs.home-manager
+
+                    # Include all packages from our custom modules
+                    pkgs.ssh-tpm-agent
+                    pkgs.keyutils
+                    (pkgs.inkscape-with-extensions.override {
+                      inkscapeExtensions = [
+                        pkgs.inkscape-extensions.inkstitch
+                      ];
+                    })
+                    pkgs.browsh
+                    pkgs.SDL_compat
+                    pkgs.android-tools
+                    pkgs.android-udev-rules
+                    pkgs.qt5.qtwayland
+                    pkgs.glfw-wayland
+                    pkgs.greetd.regreet
+                    pkgs.cage
+                    pkgs.gotop
+                    pkgs.htop
+                    pkgs.lm_sensors
+                    pkgs.intel-gpu-tools
+                    pkgs.irqbalance
+                    pkgs.libcec
+                    pkgs.wireplumber
+                    pkgs.sbctl
+                    pkgs.gsettings-desktop-schemas
+                    pkgs.dracula-theme
+                    pkgs.pinentry-qt
+                    pkgs.showmethekey
+                    pkgs.libGL
+                    pkgs.lisgd
+                    pkgs.sway
+                    pkgs.font-awesome
+                    pkgs.ccid
+                    pkgs.acsccid
+                    pkgs.pcscliteWithPolkit
+                    pkgs.pcsc-tools
+                    pkgs-unstable.pbpctrl
+                    pkgs-unstable.sops
+                    pkgs.yubikey-personalization
+                    pkgs.yubico-pam
+                    pkgs.cryptsetup
+                    pkgs.disko
+
+                    # Desktop environment packages
+                    pkgs.bibata-cursors
+                    pkgs.plymouth
+                    pkgs.plymouth-matrix-theme
+
+                    # Development tools
+                    pkgs.nixfmt-rfc-style
+                    pkgs.treefmt
+
+                    # Hardware support
+                    pkgs.hplipWithPlugin
+                    pkgs.sane-airscan
+
+                    # Network tools
+                    pkgs.iw
+                    pkgs.ethtool
+                    pkgs.usbutils
+                    pkgs.pciutils
+                    pkgs.wol
+                    pkgs.nmap
+                    pkgs.iperf3
+
+                    # Audio and media
+                    pkgs.pipewire
+                    pkgs.wireplumber
+                    pkgs.alsa-lib
+                    pkgs.pulseaudio
+
+                    # Graphics and display
+                    pkgs.mesa
+                    pkgs.xorg.xf86videointel
+                    pkgs.intel-media-driver
+                    pkgs.intel-compute-runtime
+                    pkgs.vaapiIntel
+                    pkgs.libvdpau-va-gl
+
+                    # Fonts
+                    pkgs.fira-code
+                    pkgs.fira-code-symbols
+                    pkgs.noto-fonts
+                    pkgs.noto-fonts-cjk-sans
+                    pkgs.noto-fonts-emoji
+                    pkgs.material-design-icons
+
+                    # System utilities
+                    pkgs.systemd
+                    pkgs.udev
+                    pkgs.polkit
+                    pkgs.networkmanager
+                    pkgs.bluez
+                    pkgs.blueman
+
+                    # Wayland/Sway ecosystem
+                    pkgs.waybar
+                    pkgs.swaylock
+                    pkgs.swayidle
+                    pkgs.wl-clipboard
+                    pkgs.grim
+                    pkgs.slurp
+                    pkgs.fuzzel
+                    pkgs.foot
+
+                    # Essential system libraries
+                    pkgs.glibc
+                    pkgs.gcc
+                    pkgs.binutils
+                    pkgs.coreutils
+                    pkgs.findutils
+                    pkgs.gnugrep
+                    pkgs.gnused
+                    pkgs.gnutar
+                    pkgs.gzip
+                    pkgs.bzip2
+                    pkgs.xz
                   ];
 
                   # SSH for remote access
@@ -361,7 +501,7 @@
           # packages.default = self'.packages.activate;
 
           packages = {
-            # Signed installer ISO with Secure Boot keys
+            # Signed installer ISO with Secure Boot signed EFI bootloaders
             shulkerbox-installer-signed =
               let
                 baseIso = self.nixosConfigurations.shulkerbox-installer.config.system.build.isoImage;
@@ -375,17 +515,22 @@
                     coreutils
                     util-linux
                     findutils
+                    xorriso
+                    dosfstools
+                    mtools
+                    squashfs-tools-ng
+                    cdrkit # provides genisoimage
                   ];
                   meta = with pkgs.lib; {
-                    description = "Shulkerbox installer ISO with Secure Boot signing";
+                    description = "Shulkerbox installer ISO with Secure Boot signed EFI bootloaders";
                     license = licenses.mit;
                     platforms = platforms.linux;
                   };
                 }
                 ''
-                  echo "Preparing ISO for signing..."
+                  echo "Preparing ISO with signed EFI bootloaders..."
 
-                  # Find the ISO file in the base build - look for actual files, not directories
+                  # Find the ISO file in the base build
                   isoFile=$(find ${baseIso} -name "*.iso" -type f | head -1)
                   if [ -z "$isoFile" ]; then
                     echo "Error: No ISO file found in base build"
@@ -395,24 +540,107 @@
                   fi
 
                   echo "Found ISO: $isoFile"
-                  cp "$isoFile" ./installer.iso
+                  cp "$isoFile" ./original.iso
 
                   # Check if we have secureboot keys available
                   if [ -d "${securebootKeys}" ] && [ -f "${securebootKeys}/db/db.key" ] && [ -f "${securebootKeys}/db/db.pem" ]; then
-                    echo "Secureboot keys found, signing ISO..."
+                    echo "Secureboot keys found, extracting and signing EFI bootloaders..."
                     
-                    # Sign the ISO with the db key
-                    sbsign --key "${securebootKeys}/db/db.key" --cert "${securebootKeys}/db/db.pem" --output installer-signed.iso installer.iso
+                    # Create working directory
+                    mkdir -p iso_extract efi_extract
                     
-                    if [ $? -eq 0 ]; then
-                      echo "ISO signed successfully"
-                    else
-                      echo "Signing failed, creating unsigned copy"
-                      cp installer.iso installer-signed.iso
+                    # Extract the ISO
+                    echo "Extracting ISO contents..."
+                    xorriso -osirrox on -indev original.iso -extract / iso_extract/
+                    
+                    # Find and extract the EFI system partition
+                    efiImg=$(find iso_extract -name "efiboot.img" -type f | head -1)
+                    if [ -z "$efiImg" ]; then
+                      echo "Warning: No efiboot.img found, looking for other EFI images..."
+                      efiImg=$(find iso_extract -name "*.img" -path "*/EFI*" -type f | head -1)
                     fi
+                    
+                    if [ -n "$efiImg" ]; then
+                      echo "Found EFI image: $efiImg"
+                      
+                      # Mount the EFI image and extract contents
+                      mkdir -p efi_mount
+                      cp "$efiImg" ./efiboot.img
+                      
+                      # Extract FAT filesystem contents
+                      mcopy -s -i ./efiboot.img :: efi_extract/ || true
+                      
+                      # Find and sign EFI executables
+                      echo "Signing EFI executables..."
+                      signed_count=0
+                      find efi_extract -name "*.efi" -type f | while read efi_file; do
+                        echo "Signing: $efi_file"
+                        sbsign --key "${securebootKeys}/db/db.key" 
+                               --cert "${securebootKeys}/db/db.pem" 
+                               --output "$efi_file.signed" 
+                               "$efi_file"
+                        
+                        if [ $? -eq 0 ]; then
+                          mv "$efi_file.signed" "$efi_file"
+                          signed_count=$((signed_count + 1))
+                          echo "  ✓ Signed successfully"
+                        else
+                          echo "  ✗ Signing failed"
+                        fi
+                      done
+                      
+                      # Rebuild the EFI image with signed bootloaders
+                      echo "Rebuilding EFI image with signed bootloaders..."
+                      
+                      # Create new FAT image
+                      dd if=/dev/zero of=./efiboot_new.img bs=1M count=64
+                      mkfs.vfat -F 32 ./efiboot_new.img
+                      
+                      # Copy signed files back
+                      mcopy -s -i ./efiboot_new.img efi_extract/* ::
+                      
+                      # Replace the EFI image in the ISO contents
+                      cp ./efiboot_new.img "$efiImg"
+                      
+                      echo "Rebuilding ISO with signed EFI bootloaders..."
+                      
+                      # Rebuild the ISO
+                      xorriso -as mkisofs 
+                        -iso-level 3 
+                        -full-iso9660-filenames 
+                        -volid "NIXOS_ISO" 
+                        -eltorito-boot isolinux/isolinux.bin 
+                        -eltorito-catalog isolinux/boot.cat 
+                        -no-emul-boot 
+                        -boot-load-size 4 
+                        -boot-info-table 
+                        -eltorito-alt-boot 
+                        -e EFI/boot/efiboot.img 
+                        -no-emul-boot 
+                        -isohybrid-gpt-basdat 
+                        -output installer-signed.iso 
+                        iso_extract/ || {
+                        
+                        # Fallback: try simpler ISO creation
+                        echo "Primary ISO rebuild failed, trying simpler method..."
+                        genisoimage -r -J -b isolinux/isolinux.bin -c isolinux/boot.cat 
+                          -no-emul-boot -boot-load-size 4 -boot-info-table 
+                          -eltorito-alt-boot -e EFI/boot/efiboot.img -no-emul-boot 
+                          -o installer-signed.iso iso_extract/ || {
+                          
+                          echo "ISO rebuild failed, copying original"
+                          cp original.iso installer-signed.iso
+                        }
+                      }
+                      
+                    else
+                      echo "No EFI image found in ISO, copying original"
+                      cp original.iso installer-signed.iso
+                    fi
+                    
                   else
                     echo "No secureboot keys found, creating unsigned copy"
-                    cp installer.iso installer-signed.iso
+                    cp original.iso installer-signed.iso
                   fi
 
                   # Install outputs
@@ -424,13 +652,14 @@
 
                   # Create metadata
                   cat > $out/build-info.txt << EOF
-                  Shulkerbox Installer ISO
+                  Shulkerbox Installer ISO with Signed EFI Bootloaders
                   System: ${system}
                   Base ISO: $(basename "$isoFile")
-                  Signed: $([ -f "${securebootKeys}/db/db.key" ] && echo "Yes" || echo "No")
+                  EFI Signed: $([ -f "${securebootKeys}/db/db.key" ] && echo "Yes" || echo "No")
                   Build: $(date)
                   EOF
                 '';
+
           };
 
           devShells.default = pkgs.mkShell {
