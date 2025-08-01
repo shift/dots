@@ -26,5 +26,6 @@
   home.packages = with pkgs; [
     reaper # Music editing software
     davinci-resolve # Video editing software
+    vlc # video player
   ];
 }
