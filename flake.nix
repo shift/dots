@@ -354,7 +354,6 @@
       perSystem =
         {
           pkgs,
-          system,
           ...
         }:
         {
