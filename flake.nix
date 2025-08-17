@@ -62,6 +62,17 @@
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
+  nixConfig = {
+    extra-substituters = [
+      "https://cache.garnix.io"
+      "https://shift.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+      "shift.cachix.org-1:GfqZjV2WglCFobSSZ+l+IH2ojrY8LyJVA6cMmgVVBgk="
+    ];
+  };
+
   outputs =
     inputs@{
       self,
