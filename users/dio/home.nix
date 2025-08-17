@@ -18,12 +18,9 @@
 
   programs.firefox.enable = true;
   programs.vscode = {
-  # programs.vscode.profiles.default.userSettings
     enable = true;
-    profiles = {
-      userSettings = {
-        "window.titleBarStyle" = "custom";
-      };
+    userSettings = {
+      "window.titleBarStyle" = "custom";
     };
   };
   home.packages = with pkgs; [
