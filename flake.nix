@@ -62,6 +62,17 @@
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
+  nixConfig = {
+    extra-substituters = [
+      "https://cache.garnix.io"
+      "https://shift.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+      "shift.cachix.org-1:GfqZjV2WglCFobSSZ+l+IH2ojrY8LyJVA6cMmgVVBgk="
+    ];
+  };
+
   outputs =
     inputs@{
       self,
@@ -343,7 +354,6 @@
       perSystem =
         {
           pkgs,
-          system,
           ...
         }:
         {
@@ -359,79 +369,6 @@
           # };
           #
           # packages.default = self'.packages.activate;
-
-          packages = {
-            # Signed installer ISO with Secure Boot keys
-            shulkerbox-installer-signed =
-              let
-                baseIso = self.nixosConfigurations.shulkerbox-installer.config.system.build.isoImage;
-                securebootKeys = ./secrets/secureboot/x1y;
-              in
-              pkgs.runCommand "shulkerbox-installer-signed-1.0.0"
-                {
-                  buildInputs = with pkgs; [
-                    sbsigntool
-                    sbctl
-                    coreutils
-                    util-linux
-                    findutils
-                  ];
-                  meta = with pkgs.lib; {
-                    description = "Shulkerbox installer ISO with Secure Boot signing";
-                    license = licenses.mit;
-                    platforms = platforms.linux;
-                  };
-                }
-                ''
-                  echo "Preparing ISO for signing..."
-
-                  # Find the ISO file in the base build - look for actual files, not directories
-                  isoFile=$(find ${baseIso} -name "*.iso" -type f | head -1)
-                  if [ -z "$isoFile" ]; then
-                    echo "Error: No ISO file found in base build"
-                    echo "Contents of ${baseIso}:"
-                    find ${baseIso} -type f | head -10
-                    exit 1
-                  fi
-
-                  echo "Found ISO: $isoFile"
-                  cp "$isoFile" ./installer.iso
-
-                  # Check if we have secureboot keys available
-                  if [ -d "${securebootKeys}" ] && [ -f "${securebootKeys}/db/db.key" ] && [ -f "${securebootKeys}/db/db.pem" ]; then
-                    echo "Secureboot keys found, signing ISO..."
-                    
-                    # Sign the ISO with the db key
-                    sbsign --key "${securebootKeys}/db/db.key" --cert "${securebootKeys}/db/db.pem" --output installer-signed.iso installer.iso
-                    
-                    if [ $? -eq 0 ]; then
-                      echo "ISO signed successfully"
-                    else
-                      echo "Signing failed, creating unsigned copy"
-                      cp installer.iso installer-signed.iso
-                    fi
-                  else
-                    echo "No secureboot keys found, creating unsigned copy"
-                    cp installer.iso installer-signed.iso
-                  fi
-
-                  # Install outputs
-                  mkdir -p $out
-                  cp installer-signed.iso $out/
-
-                  # Create a convenient symlink with a predictable name
-                  ln -s installer-signed.iso $out/shulkerbox-installer-signed.iso
-
-                  # Create metadata
-                  cat > $out/build-info.txt << EOF
-                  Shulkerbox Installer ISO
-                  System: ${system}
-                  Base ISO: $(basename "$isoFile")
-                  Signed: $([ -f "${securebootKeys}/db/db.key" ] && echo "Yes" || echo "No")
-                  Build: $(date)
-                  EOF
-                '';
-          };
 
           devShells.default = pkgs.mkShell {
             buildInputs = [
