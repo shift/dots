@@ -594,11 +594,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1760493654,
-        "narHash": "sha256-DRJZnMoBw+p6o0XjaAOfAJjwr4s93d1+eCsCRsAP/jY=",
+        "lastModified": 1760579771,
+        "narHash": "sha256-dt3d01jcfwmeA8YC8h2mv+Jqfr37oeiNIve+yuQ27RI=",
         "owner": "Infinidoge",
         "repo": "nix-minecraft",
-        "rev": "4ca5164f23948b4b5429d8fdcddc142079c6aa6b",
+        "rev": "76f253984245467617799e82b3aa6972d0ba83e5",
         "type": "github"
       },
       "original": {
@@ -774,11 +774,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1760573384,
-        "narHash": "sha256-BudKICBwWIs+Xcf483PG8+azoy2FmT/l9zfVdbrvpVY=",
+        "lastModified": 1760662777,
+        "narHash": "sha256-M0kmJSVu8pjsj1ytkOqPupQKnltF+NAcva9f+ogVEHk=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "73f0dae421034365b3b9da09ca3fa9d957541f14",
+        "rev": "8a2f134398eb624605a7c62ee79e9281ee20bab8",
         "type": "github"
       },
       "original": {
