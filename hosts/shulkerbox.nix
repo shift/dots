@@ -3,6 +3,7 @@
   lib,
   pkgs,
   pkgs-unstable,
+  inputs,
   ...
 }:
 {
@@ -398,8 +399,8 @@
     qt5.qtwayland
     SDL_compat
     android-tools
-    android-udev-rules
-    glfw-wayland
+
+    glfw
     greetd.regreet
     neovim
     cage
@@ -462,8 +463,8 @@
     extraPackages = with pkgs; [
       intel-compute-runtime
       intel-media-driver
-      intel-media-sdk
-      vaapiVdpau
+
+      libva-vdpau-driver
       libvdpau-va-gl
       vpl-gpu-rt
     ];
@@ -472,6 +473,7 @@
   home-manager.backupFileExtension = "backup";
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
+  home-manager.extraSpecialArgs = { inputs' = inputs; };
   home-manager.users.shift = ./../users/shift/home.nix;
   home-manager.users.dio = ./../users/dio/home.nix;
   home-manager.users.squeals = ./../users/squeals/home.nix;

@@ -2,10 +2,10 @@
   description = "DOTS";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/release-25.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    home-manager.url = "github:nix-community/home-manager/release-25.05";
+    home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     impermanence.url = "github:nix-community/impermanence";
@@ -27,6 +27,9 @@
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    dots.url = "git+file:///home/shift/code/dots-framework";
+    dots.inputs.nixpkgs.follows = "nixpkgs";
 
     # Software inputs
     dots-notifier = {
@@ -57,6 +60,10 @@
     # BLING!
     stylix.url = "github:nix-community/stylix/release-25.05";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
+    niri = {
+      url = "github:YaLTeR/niri";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Devshell
     treefmt-nix.url = "github:numtide/treefmt-nix";
@@ -74,7 +81,7 @@
   };
 
   outputs =
-    inputs@{
+      inputs@{
       self,
       nixpkgs,
       nixpkgs-unstable,
@@ -85,6 +92,7 @@
       nixvim,
       nixos-generators,
       disko,
+      niri,
       ...
     }:
     let
@@ -126,7 +134,9 @@
               nixvim.nixosModules.nixvim
               inputs.stylix.nixosModules.stylix
               inputs.geoclue-prometheus-exporter.nixosModules.default
-              inputs.dots-notifier.nixosModules.x86_64-linux.notifier
+               inputs.dots-notifier.nixosModules.x86_64-linux.notifier
+               inputs.dots.nixosModules.default
+
               {
                 nixpkgs.config.allowUnfree = true;
                 stylix.enable = true;
@@ -142,10 +152,17 @@
                   desktop = 0.5;
                 };
                 stylix.targets.grub.useImage = true;
+                # Disable Qt themes to avoid Plasma 5 reference
+                stylix.targets.qt.enable = false;
                 fileSystems."/persist".neededForBoot = true;
 
                 #services.btrfs.autoScrub.enable = true;
                 services.qemuGuest.enable = true;
+
+                # Install niri system-wide
+                environment.systemPackages = [
+                  inputs.niri.packages.${system}.niri
+                ];
               }
               ./modules
               inputs.dots-wallpaper.nixosModules.default
