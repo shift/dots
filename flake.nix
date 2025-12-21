@@ -28,8 +28,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dots.url = "git+file:///home/shift/code/dots-framework";
-    dots.inputs.nixpkgs.follows = "nixpkgs";
+    # Temporarily remove dots-framework input until technical issues are resolved
+    # dots.url = "git+file:///home/shift/code/dots-framework";
+    # dots.inputs.nixpkgs.follows = "nixpkgs";
 
     # Software inputs
     dots-notifier = {
