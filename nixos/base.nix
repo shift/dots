@@ -1,13 +1,37 @@
 {
   pkgs,
+  inputs,
   ...
 }:
 {
+  imports = [
+    # Completely disable all dots-framework modules until technical issues are resolved
+    # inputs.dots.nixosModules.default
+  ];
+  
+  # Enable dynamic waybar system-wide (temporarily disabled due to syntax issues)
+  # features.dynamic-waybar.enable = true;
+  # features.dynamic-waybar.deviceType = "laptop";
+  # features.dynamic-waybar.hardware.battery = "BAT0";
+  # features.dynamic-waybar.hardware.networkInterface = "wlan0";
+  
+  # Configure waybar priority overrides for optimal layout
+  # features.dynamic-waybar.priorityOverrides = {
+  #   "custom/media" = 40;
+  #   "network" = 230;
+  #   "battery" = 310;
+  #   "clock" = 320;
+  #   "tray" = 330;
+  # };
+  
+  # Enable hardware detection module for better device support
+  #features.dynamic-hardware.facter.enable = true;
+  
   system.nixos.distroId = "dots";
   # Stops systemd from blocking booting if a service hangs while activating.
-  systemd.extraConfig = ''
-    DefaultTimeoutStopSec=10s
-  '';
+  systemd.settings.Manager = {
+    DefaultTimeoutStopSec = "10s";
+  };
   # Blocks on some hardware, so lets just disable it.
   systemd.services.NetworkManager-wait-online.enable = false;
 
