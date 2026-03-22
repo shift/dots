@@ -312,6 +312,7 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.mutableUsers = false;
   users.users.dio = {
+
     hashedPasswordFile = config.sops.secrets."dio_hashed_passwd".path;
     isNormalUser = true;
     extraGroups = [
@@ -329,6 +330,8 @@
       "children"
       "tss"
     ];
+
+
   };
 
   users.users.squeals = {
@@ -431,6 +434,8 @@
     yubico-pam
     cryptsetup
     disko
+    starship
+    jami
   ];
 
   programs = {
@@ -510,6 +515,21 @@
         }
     });
   '';
+
+  systemd.services.zswap = {
+    description = "Enable zswap, set to zstd and Z3FOLD";
+    enable = true;
+    wantedBy = ["basic.target"];
+    path = [ pkgs.bash ];
+    serviceConfig = {
+      ExecStart = ''${pkgs.bash}/bin/bash -c 'cd /sys/module/zswap/parameters && \
+        echo zstd > compressor && echo 20 > max_pool_percent && \
+	echo 1 > shrinker_enabled \
+        echo 1 > enabled'
+        '';
+      Type = "oneshot";
+    };
+  };
 
   system.stateVersion = "25.05";
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

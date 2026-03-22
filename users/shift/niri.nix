@@ -162,12 +162,5 @@ in
     services.network-manager-applet.enable = true;
     services.swaync.enable = true;
     services.easyeffects.enable = true;
-
-    # Configure XDG config for niri
-    xdg.configFile."niri/config.kdl".source = niri-config;
-
-    # Enable wayland session
-    # Note: You'll need to configure your display manager to use niri
-    # or manually start it with `exec niri` in your session startup
   };
 }

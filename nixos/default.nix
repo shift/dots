@@ -22,6 +22,8 @@
           imports = [
             self.homeModules.common-linux
             inputs.nixvim.homeManagerModules.nixvim
+	    inputs.nirif.homeModules.config
+	    inputs.nirif.homeModules.stylix
           ];
         };
       };

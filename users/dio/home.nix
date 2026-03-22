@@ -1,37 +1,36 @@
-# Dio's Clean Working Configuration (No Dots Framework Import)
-
-This configuration provides all essential functionality without dots-framework imports.
-
-```nix
-{ pkgs, inputs, ... }:
+{ config
+, lib
+, pkgs
+, options
+, inputs'
+, ...
+}:
 {
-  # Essential packages
-  home.packages = with pkgs; [
-    reaper # Music editing software
-    davinci-resolve # Video editing software
-    vlc # video player
-    # Essential niri/wayland packages
-    fuzzel
-    alacritty
-    foot
-    starship
-    playerctl
-    tree
-    pavucontrol
-    slurp
-    grim
-    swww
-    wshowkeys
-    swaynotificationcenter
-    wl-clipboard
-    light
-    pamixer
-    swaylock
-    networkmanagerapplet
-    udiskie
-  ];
+    imports = [
+      inputs'.nixvim.homeModules.nixvim
+      #inputs'.dots.homeManagerModules.default
+      inputs'.dots.homeManagerModules.dynamic-aliases
+      inputs'.dots.homeManagerModules.dynamic-fonts
+      inputs'.dots.homeManagerModules.dynamic-environment
+      inputs'.dots.homeManagerModules.dynamic-shell-suite
+      inputs'.dots.homeManagerModules.dynamic-starship
+      inputs'.dots.homeManagerModules.dynamic-autostart
+      inputs'.dots.homeManagerModules.dynamic-notifications
+      inputs'.dots.homeManagerModules.dynamic-keys
+      inputs'.dots.homeManagerModules.dynamic-profiles
+      inputs'.dots.homeManagerModules.dynamic-ssh
+      inputs'.dots.homeManagerModules.dynamic-mime
+      inputs'.dots.homeManagerModules.dynamic-help
+      inputs'.dots.homeManagerModules.dynamic-input
+      inputs'.dots.homeManagerModules.dynamic-state
+      inputs'.dots.homeManagerModules.dynamic-timers
+      inputs'.dots.homeManagerModules.dynamic-secrets # Now using enhanced upstream version
+      inputs'.dots.homeManagerModules.dynamic-waybar # Full dynamic-waybar implementation with widget management
+      inputs'.dots.homeManagerModules.dynamic-hardware # Enable with waybar stub
+      # inputs.dots.homeManagerModules.dynamic-security # Security hardening suite - not yet available in upstream
+      ./niri.nix
+    ];
 
-  # Stylix configuration
   stylix = {
     enable = true;
     autoEnable = true;
@@ -41,121 +40,126 @@ This configuration provides all essential functionality without dots-framework i
     };
   };
 
-  # Essential Niri configuration
-  programs.niri.enable = true;
-  programs.niri.settings = {
-    input = {
-      keyboard = {
-        repeat-delay = 600;
-        repeat-rate = 25;
-        xkb = {
-          layout = "us";
-          options = "eurosign:e,ctrl:nocaps";
-        };
-      };
-      touchpad = {
-        tap = true;
-        natural-scroll = true;
-        click-method = "clickfinger";
-        scroll-method = "two-finger";
-        dwt = true;
-      };
+
+
+    # Enable dots framework features
+    features.dynamic-aliases.enable = true;
+    features.dynamic-fonts.enable = true;
+    features.dynamic-environment.enable = true;
+    features.dynamic-shell-suite.enable = true;
+    features.dynamic-starship.enable = true;
+    features.dynamic-autostart.enable = true;
+    features.dynamic-notifications.enable = true;
+    features.dynamic-keys.enable = true;
+    features.dynamic-ssh.enable = true;
+    features.dynamic-mime.enable = true;
+    features.dynamic-help.enable = true;
+    features.dynamic-input.enable = true;
+    features.dynamic-state.enable = true;
+    features.dynamic-timers.enable = true;
+    features.dynamic-secrets.enable = true; # Now using fixed version
+    # features.dynamic-security = {
+    #   enable = true;
+    #   profile = "balanced"; # Good security with reasonable convenience
+    # };
+    features.dynamic-waybar = {
+      enable = true;
+      theme = "cyberpunk";
+      disabledWidgets = [
+        "custom/launchers"
+        "custom/gammastep"
+        "custom/uptime"
+        "custom/nix_store"
+        "custom/tailscale"
+        "custom/flake-age"
+        "custom/nix-monitor"
+        "custom/nixos_gen"
+        "custom/nixos_version"
+        "custom/nix_store"
+        "custom/system_failed"
+        "custom/nix_build"
+        "custom/mullvad"
+        "custom/docker"
+        "custom/podman"
+        "custom/cliphist"
+        "custom/dunst"
+        "custom/docker"
+        "custom/podman"
+        "custom/github"
+        "custom/profile-rust"
+        "custom/profile-python"
+        "custom/profile-web"
+        "custom/libvirt"
+        "custom/syncthing"
+        "custom/taskwarrior"
+        "custom/swaync"
+        "custom/flatpak"
+	"custom/disk-usage"
+        "custom/usb"
+        "custom/nix_gc"
+        "custom/github"
+        "custom/systemd"
+        "custom/trash"
+        "custom/process-count"
+        "custom/system-updates"
+        "custom/colorpicker"
+        "custom/cpu-usage"
+        "custom/easyeffects"
+        "custom/hyprshade"
+        #"custom/launcher"
+        "custom/media"
+        "custom/memory-usage"
+        "custom/network-monitor"
+        "custom/power"
+        #"custom/reboot_required"
+        "custom/recorder"
+        "custom/screenshot"
+	"temperature"
+        "custom/usbguard"
+        #"custom/launcher"
+        "custom/media"
+        "custom/recorder"
+        #"custom/colorpicker"
+        "custom/hyprshade"
+        #"custom/screenshot"
+        "custom/easyeffects"
+        "custom/usbguard"
+        "custom/cpu-usage"
+        "custom/network-monitor"
+        "keyboard-state"
+        #"battery#bat2"
+	"image"
+      ];
     };
-    
-    layout = {
-      gaps = 5;
-    };
-    
-    prefer-no-csd = true;
-    
-    spawn-at-startup = [
-      { command = [ "nm-applet" ]; }
-      { command = [ "udiskie" "--tray" ]; }
-    ];
-    
-    binds = {
-      "Mod+Return" = { spawn = [ "alacritty" ]; };
-      "Mod+Space" = { spawn = [ "fuzzel" ]; };
-      "Mod+Q" = { close-window = { }; };
-      "Mod+Shift+E" = { spawn = [ "systemctl" "poweroff" ]; };
-      "Mod+Shift+R" = { spawn = [ "systemctl" "reboot" ]; };
-      "Mod+L" = { spawn = [ "swaylock" ]; };
-      
-      # Navigation
-      "Mod+Left" = { focus-column-left = { }; };
-      "Mod+Down" = { focus-window-down = { }; };
-      "Mod+Up" = { focus-window-up = { }; };
-      "Mod+Right" = { focus-column-right = { }; };
-      "Mod+Shift+Left" = { move-column-left = { }; };
-      "Mod+Shift+Down" = { move-window-down = { }; };
-      "Mod+Shift+Up" = { move-window-up = { }; };
-      "Mod+Shift+Right" = { move-column-right = { }; };
-      
-      # Workspaces
-      "Mod+1" = { focus-workspace = 1; };
-      "Mod+2" = { focus-workspace = 2; };
-      "Mod+3" = { focus-workspace = 3; };
-      "Mod+4" = { focus-workspace = 4; };
-      "Mod+5" = { focus-workspace = 5; };
-      "Mod+6" = { focus-workspace = 6; };
-      "Mod+7" = { focus-workspace = 7; };
-      "Mod+8" = { focus-workspace = 8; };
-      "Mod+9" = { focus-workspace = 9; };
-      "Mod+0" = { focus-workspace = 10; };
-      "Mod+Shift+1" = { move-column-to-workspace = 1; };
-      "Mod+Shift+2" = { move-column-to-workspace = 2; };
-      "Mod+Shift+3" = { move-column-to-workspace = 3; };
-      "Mod+Shift+4" = { move-column-to-workspace = 4; };
-      "Mod+Shift+5" = { move-column-to-workspace = 5; };
-      "Mod+Shift+6" = { move-column-to-workspace = 6; };
-      "Mod+Shift+7" = { move-column-to-workspace = 7; };
-      "Mod+Shift+8" = { move-column-to-workspace = 8; };
-      "Mod+Shift+9" = { move-column-to-workspace = 9; };
-      "Mod+Shift+0" = { move-column-to-workspace = 10; };
-      
-      # Window management
-      "Mod+F" = { maximize-column = { }; };
-      "Mod+Shift+F" = { fullscreen-window = { }; };
-      "Mod+C" = { center-column = { }; };
-      "Mod+Comma" = { consume-window-into-column = { }; };
-      "Mod+Period" = { expel-window-from-column = { }; };
-      
-      # Audio controls
-      "XF86AudioMute" = { spawn = [ "pamixer" "-t" ]; };
-      "XF86AudioLowerVolume" = { spawn = [ "pamixer" "-d" "5" ]; };
-      "XF86AudioRaiseVolume" = { spawn = [ "pamixer" "-i" "5" ]; };
-      
-      # Brightness controls
-      "XF86MonBrightnessDown" = { spawn = [ "light" "-U" "5" ]; };
-      "XF86MonBrightnessUp" = { spawn = [ "light" "-A" "5" ]; };
-      
-      # Screenshots
-      "Print" = { screenshot = { }; };
-      "Ctrl+Print" = { screenshot-screen = { }; };
-      "Alt+Print" = { screenshot-window = { }; };
+    features.dynamic-hardware.enable = true; # Now enabled with waybar stub
+
+
+
+
+
+
+ # Resolve theme conflicts - let Stylix take precedence
+    programs.bat.config.theme = lib.mkForce "base16-stylix";
+    programs.btop.settings.color_theme = lib.mkForce "stylix";
+
+  home.stateVersion = "25.05"; # Don't change this. This will not upgrade your home-manager.
+  programs.home-manager.enable = true;
+
+  #### You can edit this below here
+
+  programs.firefox.enable = true;
+  programs.vscode = {
+    enable = true;
+    userSettings = {
+      "window.titleBarStyle" = "custom";
     };
   };
+  home.packages = with pkgs; [
+    reaper # Music editing software
+    davinci-resolve # Video editing software
+    vlc # video player
+    bitwarden-desktop
+    ghostty
+  ];
 
-  home.stateVersion = "25.05";
-  programs.home-manager.enable = true;
 }
-```
-
-## Instructions
-
-1. **Replace dio's current configuration** with this clean version
-2. **Test build** - should succeed immediately
-3. **Deploy** - Use current working configuration
-4. **Reintegrate dots-framework** - Once technical issues are resolved by maintainers
-
-## Benefits
-
-✅ **Immediate Success** - All essential Niri/wayland packages and configuration
-✅ **Stylix Integration** - Custom wallpaper and theming working  
-✅ **Productivity Setup** - Complete keybinding configuration
-✅ **Media Tools** - Reaper, DaVinci, VLC included
-✅ **No Framework Dependencies** - No broken module imports
-
-## Migration Strategy
-
-This approach provides immediate success while preserving all the structural work done. The technical issues in dots-framework can be resolved independently without blocking dio's desktop environment.

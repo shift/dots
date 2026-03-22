@@ -1,7 +1,7 @@
-{ ... }:
+{ inputs', ... }:
 {
   imports = [
-    ./niri.nix
+    inputs'.dots.homeManagerModules.dynamic-profiles
     ./waybar/default.nix
     ./fuzzel.nix
   ];
@@ -9,6 +9,16 @@
   programs.home-manager.enable = true;
   programs.neovim.enable = true;
 
-  # Enable niri window manager
-  shift.niri.enable = true;
+  # Enable dots framework profiles
+  features.dynamic-profiles = {
+    jsonContent = ''
+      {
+        "base": true,
+        "printing": true,
+        "gaming": true,
+        "nix-dev": true
+      }
+    '';
+  };
 }
+

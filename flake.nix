@@ -28,6 +28,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nirif = { 
+      url = "github:sodiboo/niri-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    dots.url = "/home/dio/.daddy/dots-dev/";
+    dots.inputs.nixpkgs.follows = "nixpkgs";
+
     # Temporarily remove dots-framework input until technical issues are resolved
     # dots.url = "git+file:///home/shift/code/dots-framework";
     # dots.inputs.nixpkgs.follows = "nixpkgs";
@@ -46,7 +54,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixvim = {
-      url = "github:nix-community/nixvim/nixos-25.05";
+      url = "github:nix-community/nixvim/nixos-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixd = {
@@ -59,7 +67,7 @@
     };
 
     # BLING!
-    stylix.url = "github:nix-community/stylix/release-25.05";
+    stylix.url = "github:nix-community/stylix/release-25.11";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
     niri = {
       url = "github:YaLTeR/niri";
@@ -74,10 +82,14 @@
     extra-substituters = [
       "https://cache.garnix.io"
       "https://shift.cachix.org"
+      "https://nix-community.cachix.org"
+      "https://nixpkgs-unfree.cachix.org"
     ];
     extra-trusted-public-keys = [
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "shift.cachix.org-1:GfqZjV2WglCFobSSZ+l+IH2ojrY8LyJVA6cMmgVVBgk="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "nixpkgs-unfree.cachix.org-1:hqvoInulhbV4nJ9yJOEr+4wxhDV4xq2d1DK7S6Nj6rs="
     ];
   };
 
@@ -94,6 +106,8 @@
       nixos-generators,
       disko,
       niri,
+      nirif,
+      dots,
       ...
     }:
     let
@@ -134,9 +148,9 @@
               home-manager.nixosModules.home-manager
               nixvim.nixosModules.nixvim
               inputs.stylix.nixosModules.stylix
-              inputs.geoclue-prometheus-exporter.nixosModules.default
+	      inputs.nirif.nixosModules.niri
+               inputs.geoclue-prometheus-exporter.nixosModules.default
                inputs.dots-notifier.nixosModules.x86_64-linux.notifier
-               inputs.dots.nixosModules.default
 
               {
                 nixpkgs.config.allowUnfree = true;

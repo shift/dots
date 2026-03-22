@@ -1,0 +1,8 @@
+{
+  "base": true,
+  "printing": true,
+  "web": true,
+  "gaming": true,
+  "office": true,
+  "nix-dev": true
+}
