@@ -30,7 +30,7 @@
   };
 
   services.geoclue-prometheus-exporter = {
-    enable = true;
+    enable = false;
     bind = "127.0.0.1";
     port = 9090;
     openFirewall = false;

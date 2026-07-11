@@ -160,6 +160,7 @@
     vlc # video player
     bitwarden-desktop
     ghostty
+    wasistlos
   ];
 
 }

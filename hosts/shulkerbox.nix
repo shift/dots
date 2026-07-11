@@ -275,7 +275,14 @@
 
   location.provider = "geoclue2";
 
-  programs.steam.enable = true;
+
+  programs.steam = {
+    enable = true;
+    remotePlay.openFirewall = true;
+    dedicatedServer.openFirewall = true;
+    gamescopeSession.enable = true;
+    extraCompatPackages = [ pkgs.proton-ge-bin ];
+  };
   programs.gamescope.enable = true;
 
   programs.regreet = {
@@ -401,8 +408,11 @@
     browsh
     qt5.qtwayland
     SDL_compat
+    python3
     android-tools
-
+    protonup-qt  # GUI to install/manage custom GE-Proton versions
+    protontricks # Winetricks wrapper for Steam prefixes
+    steam-run    # Creates the FHS environment needed to execute binaries natively
     glfw
     greetd.regreet
     neovim
@@ -465,7 +475,16 @@
   };
   hardware.graphics = {
     enable = true;
+    enable32Bit = true;
+    
+    extraPackages32 = with pkgs.pkgsi686Linux; [
+      intel-media-driver
+      intel-vaapi-driver
+    ];
     extraPackages = with pkgs; [
+      intel-media-driver # iHD driver for Broadwell and newer
+      vulkan-validation-layers
+      intel-vaapi-driver
       intel-compute-runtime
       intel-media-driver
 
@@ -498,7 +517,7 @@
   };
   # If the geoclue module is enabled, it will auto-register with alloy
   services.geoclue-prometheus-exporter = {
-    enable = true;
+    enable = false;
     bind = "127.0.0.1";
     port = 9090;
 

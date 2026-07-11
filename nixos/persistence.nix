@@ -12,6 +12,8 @@ _: {
       "/etc/NetworkManager/system-connections"
       "/var/lib/fprint"
       "/var/cache/powertop"
+      "/home/dio"
+      "/home/squeals"
       {
         directory = "/var/lib/colord";
         user = "colord";

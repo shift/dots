@@ -33,7 +33,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dots.url = "/home/dio/.daddy/dots-dev/";
+    dots.url = "/persist/home/dio/.daddy/dots-dev/";
     dots.inputs.nixpkgs.follows = "nixpkgs";
 
     # Temporarily remove dots-framework input until technical issues are resolved
